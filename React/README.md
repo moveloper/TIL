@@ -26,7 +26,7 @@
 * state가 수정이 되면 리액트는 state가 포함된 HTML을 자동으로 랜더링 해준다. 자주 변하는 데이터들을 저장하는데 유용하다.
 * 컴포넌트는 긴 HTML을 한 단어로 치환해서 넣을 수 있는 문법이다. 사용 방법은 함수를 하나 만들어서 return 값 안에 HTML을 담은 다음에 또 다른 컴포넌트에 집어 넣으면 된다. 보통 영어 대문자로 시작하며 return 안에 평행한 여러개의 태그를 쓸 수 없다. 쓰려면 div나 <></>로 묶어야 한다.
 * 자식 컴포넌트가 부모 컴포넌트 안에 있던 state를 쓰고 싶은 때는 props문법을 사용하여 state를 전송하고 `{props.state이름}` 식으로 쓰면 된다.
- ```java
+ ```js
 /* eslint-disable */   // 터미널 창에서 Warning 노출 X
 //useState를 사용하기 위해 import를 해야한다. 
 import React, {useState} from 'react'; 
