@@ -7,6 +7,7 @@ import './Detail.scss'
 import {재고context} from './App.js';
 import { Nav } from 'react-bootstrap';
 import {CSSTransition} from 'react-transition-group';
+import { connect } from 'react-redux';
 
 let 박스 = styled.div`
     padding: 20px;
@@ -48,6 +49,23 @@ let 제목 = styled.h4`
         return 상품.id == id
     });
 
+    useEffect(()=>{
+        var arr = localStorage.getItem('watched');
+        if( arr == null){ arr = []}else{arr = JSON.parse(arr)}
+
+        //useParams()
+        arr.push(id);
+        arr = new Set(arr)
+        arr = [...arr]; // 중복이 제거됨
+
+        localStorage.setItem('watched', JSON.stringify(arr));
+        
+    },[])
+
+
+
+
+
     return(
       <div className="container">
           <박스>
@@ -75,7 +93,11 @@ let 제목 = styled.h4`
 
             <Info 재고={props.재고}></Info>
 
-            <button className="btn btn-danger" onClick={()=>{ props.재고변경([9, 11, 12])}}>주문하기</button> 
+            <button className="btn btn-danger" onClick={()=>{ 
+                props.재고변경([9, 11, 12])
+                props.dispatch({type : '항목추가', payload : { id : 찾은상품.id, name : 찾은상품.title, quan : 1}});
+                history.push('/cart');
+                }}>주문하기</button> 
             <button className="btn btn-danger" onClick={()=>{ 
                 history.goBack();  
             }}>뒤로가기</button> 
@@ -112,12 +134,20 @@ let 제목 = styled.h4`
             return <div>2번째 내용입니다</div>
         }
     }
-    
+
     function Info(props){
         return (
             <p>재고: { props.재고[0] } </p>
         )
     }
   
+    function state를props화(state) {
+        console.log(state);
+        return {
+            state : state.reducer,
+            alert열렸니 : state.reducer2
+        }
+    }
 
-export default Detail;
+export default connect(state를props화)(Detail)    
+//export default Detail;

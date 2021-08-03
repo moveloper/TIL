@@ -1,13 +1,14 @@
 /*eslint-disable*/
-import React, {useContext, useState} from 'react';
+import React, {useContext, useState, lazy, Suspense} from 'react';
 import logo from './logo.svg';
 import { Navbar, Container, Nav, NavDropdown, Button } from 'react-bootstrap';
 import './App.css';
 import Data from './data.js'
-import Detail from './Detail.js'
+// import Detail from './Detail.js'
+let Detail = lazy(()=> import('./Detail.js'));
 import axios from 'axios';
 
-import { Link, Route, Switch } from 'react-router-dom';
+import { Link, Route, Switch, useHistory } from 'react-router-dom';
 import { Modal } from 'bootstrap';
 import Cart from './Cart.js'
 
@@ -83,7 +84,9 @@ function App() {
           
       <Route path="/detail/:id">
         <재고context.Provider value={재고}>
-          <Detail 신발={신발} 재고={재고} 재고변경={재고변경}/>
+          <Suspense fallback={ <div>로딩중이에요</div>}>
+            <Detail 신발={신발} 재고={재고} 재고변경={재고변경}/>
+          </Suspense>
         </재고context.Provider>
       </Route>
 
@@ -97,9 +100,10 @@ function App() {
 function 신발정보(props){
   
   let 재고 = useContext(재고context);
+  let history = useHistory();
 
   return(
-    <div className="col-md-4">
+    <div className="col-md-4" onClick={()=>{ history.push('/detail/' + props.신발.id)}}>
 {/* JSX 엘리먼트 대부분의 props는 컴포넌트로 전달되지만 React에서 사용하는 두 개의 특수 props(ref 및 key)는 컴포넌트로 전달되지 않습니다.
 예를 들어, 컴포넌트에서 this.props.key를 render 함수나 propTypes에서 접근하면 그 값은 undefined 입니다. 자식 컴포넌트 내에서 같은 값에
 액세스하고 싶다면 다른 프로퍼티로 전달해야 합니다(예시: <ListItemWrapper key={result.id} id={result.id} />). 

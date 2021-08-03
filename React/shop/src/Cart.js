@@ -8,10 +8,10 @@ function Cart(props){
             <Table striped bordered hover variant="dark">
                 <thead>
                     <tr>
+                    <th>#</th>
                     <th>상품명</th>
                     <th>수량</th>
                     <th>변경</th>
-                    <th>비고</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -22,7 +22,10 @@ function Cart(props){
                                 <td>{ a.id}</td>
                                 <td>{ a.name }</td>
                                 <td>{ a.quan }</td>
-                                <td>Table cell</td>
+                                <td>
+                                    <button onClick={()=>{ props.dispatch({ type : '수량증가', 데이터 : a.id - 1 })}}>+</button>
+                                    <button onClick={()=>{ props.dispatch({ type : '수량감소', 데이터 : a.id - 1 })}}>-</button>
+                                </td>
                                 </tr>
                             )
                         })
@@ -30,13 +33,24 @@ function Cart(props){
                     }
                 </tbody>
             </Table>  
+            {
+                props.alert열렸니 === true 
+                ? (    
+                <div className="my-alert">
+                <p>지금 구매하시면 신규할인 20%</p>
+                <button onClick={ ()=>{ props.dispatch({ type : 'alert닫기' }) }}>닫기</button>
+                </div>)
+                : null
+            }        
         </div>
     )
 }
 
 function state를props화(state){
+    console.log(state);
     return{
-        state : state
+        state : state.reducer,
+        alert열렸니 : state.reducer2
     }
 }
 
