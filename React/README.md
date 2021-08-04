@@ -241,3 +241,20 @@ function App() {
       axios.get('URL 주소')
       .then(()=>{ 요청성공시실행할코드 })
       .catch(()=>{ 요청실패시실행할코드 })
+
+> 여기서부터는 SHOP 프로젝트의 App.js, Detail.js, Cart.js 코드들을 보면서 복습하기   
+
+## Context API
+* 코드 참조
+* 1)`React.createContext()`로 범위 생성하고, 2)`<범위> value={값}></범위>`로 전송을 원하는 컴포넌트를 감싸고, 3) state 사용을 원하는 컴포넌트는 useContext(범위)를 이용하면 된다
+
+## 리덕스는 왜쓰지? 
+
+1. props 전송 없이도 모든 컴포넌트들이 state를 사용할 수 있게 만들어준다.
+
+2. 데이터를 수정하고 싶을 때는  
+    1) state 데이터의 수정 방법을 index.js에다가 미리 정의해놓고(reducer)
+    2) index.js의 reducer 함수 안에서 수정방법을 정의해놓고 수정함  
+    > 한마디로 state 관리가 용이해지는 것이다 
+
+3. `props.dispatch(데이터)`와 같은 방법으로 리덕스로 데이터 실어 보내서 reducer 안에서 요청을 처리할 때 사용할 수 있다. 
