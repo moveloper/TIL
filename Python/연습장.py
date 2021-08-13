@@ -1,5 +1,4 @@
-matrix_a = [[3, 6], [4, 5]]
-matrix_b = [[5, 8], [6, 7]]
-result = [[sum(row) for row in zip(*t)] for t in zip(matrix_a, matrix_b)]
+data = ['\n"54\n', '\nrue Royale"\n']
+print(data[0].strip('\n'))
 
-print(result)
+# 103,Atelier graphique,Schmitt,Carine ,40.32.2555,"54, rue Royale",NULL,Nantes,NULL,44000,France,1370,21000
