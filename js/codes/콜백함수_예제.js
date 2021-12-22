@@ -24,7 +24,7 @@ console.log(newArr)
 Array.prototype.map=function(callback,thisArg){
     var mappedArr=[]
     for(var i=0;i<this.length;i++){
-        var mappedValue=callback.call(thisArg||window,this[i],i,this)   // this에
+        var mappedValue=callback.call(thisArg||window,this[i],i,this)   // this에는 map을 호출한 객체가, thisArg는 콜백함수에 매칭시켜줄 this를 넘겨받는다
         mappedArr[i]=mappedValue
     }
     return mappedArr
