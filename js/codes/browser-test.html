@@ -9,7 +9,54 @@
 </head>
 
 <body>
-    <script src="./this_콜백함수_호출시.js"> </script>
+    <script> 
+    var fruits=['apple','banana','peach']
+    var $ul=document.createElement('ul')
+    
+    // 콜백 함수의 클로저
+    // fruits.forEach(function(fruit){
+    //     var $li=document.createElement('li')
+    //     $li.innerText=fruit
+    //     $li.addEventListener('click',function(){
+    //         alert('your choice is '+fruit)
+    //     })
+    //     $ul.appendChild($li)
+    // })
+    // document.body.appendChild($ul)
+
+    //콜백 함수와 클로저 2[object PointEvent 반환]
+    // var alertFruit=function(fruit){
+    //     alert('your choice is '+fruit)
+    // }
+    // fruits.forEach(function(fruit){
+    //     var $li=document.createElement('li')
+    //     $li.innerText=fruit
+    //     $li.addEventListener('click',alertFruit)
+    //     //bind 함수를 사용하지 않으면 이벤트 객체를 alert 한다.
+    //     //$li.addEventListener('click',alertFruit.bind(null,fruit))
+    //     $ul.appendChild($li)
+    // })
+    // document.body.appendChild($ul)
+    
+    // 콜백 함수와 클로저3
+    var alertFruitBuilder=function(fruit){
+        return function(){
+            alert('your choice is '+fruit)
+        }
+    }
+    var alertFruit=function(fruit){
+        alert('your choice is '+fruit)
+    }
+
+    fruits.forEach(function(fruit){
+        var $li=document.createElement('li')
+        $li.innerText=fruit
+        $li.addEventListener('click',alertFruit(fruit)) 
+        //$li.addEventListener('click',alertFruitBuilder(fruit))
+        $ul.appendChild($li)
+    })
+    document.body.appendChild($ul)
+    </script>
 </body>
 
 </html>

@@ -7,6 +7,6 @@ setTimeout(function(){
 }); // this는 Window
 
 document.body.innerHTML += '<button id="a">클릭</button>'
-document.body.querySelector('#a').addEvent  Listener('click', function(e){
+document.body.querySelector('#a').addEventListener('click', function(e){
     console.log("+++++++", this, "++++++++", e)
 }); // querySelector('#a')가 this

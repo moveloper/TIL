@@ -1,10 +1,10 @@
-var a=function(arg1){
-    console.log(arg1)
-}
-
-var b=function(arg1,arg2){
-    console.log(arg1,arg2)
-}
-
-console.log(a(1))
-console.log(b(2))
+var outer=(function(){
+    var a=1;
+    var inner=function(){
+        return ++a
+    }
+    return inner
+})();
+console.log(outer())
+console.log(outer)
+outer=null

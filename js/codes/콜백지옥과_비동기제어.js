@@ -3,18 +3,19 @@
 // 사용이유: 적절한 시기(특히 비동기적인 상황을 제어하기 위한)에 콜백 함수를 실행시키기 위해서 
 var a= function(callback){
     console.log("시작")
-    // 기다리지 않음
+    //webapi 이벤트로 이동 -> setTimeout 기다리지 않고 맨 아래 console.log(끝)로 이동
     setTimeout(function(name){
         var coffeeList=name
-        // 기다리지 않고 맨 아래 console.log(coffeeList)로
+        // 또다시 setTimeout 마주쳐서 webapi로 이동시키고 
+        // 기다리지 않고 맨 아래 console.log(coffeeList)로 이동
         setTimeout(function(name){
             coffeeList+=', '+name
             console.log(coffeeList)
-            // 기다리지 않음
+            // 동일 과정
             setTimeout(function(name){
                 coffeeList+=', '+name
                 console.log(coffeeList)
-                // 기다리지 않음
+                // 동일 과정
                 setTimeout(function(name){
                     coffeeList+=', '+name
                     console.log(coffeeList)
@@ -83,12 +84,4 @@ var addLatte=function(name){
 }
 setTimeout(addEspresso,500,'에스프레소')
 
-// 비동기 작업의 동기적 표현 - Promise
-new Promise(function(resolve){
-    setTimeout(function(){
-        var name='에스프레소'
-        console.log(name)
-        resol
-    })
-})
 
