@@ -20,3 +20,6 @@ grant connect, resource to homerun;
 
 ### dbeaver에서 system 관련 스키마가 안보일 경우  
 Connection right-click -> Connection view... -> Show system objects
+
+### 도커 권한 변경 후 sudo 명령어 사용안하기
+sudo usermod -a -G docker ec2-user
