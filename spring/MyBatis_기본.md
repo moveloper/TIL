@@ -118,7 +118,9 @@ alias는 MyBatis 설정파일에 설정한다.
 </select>
 ```
  
-MyBatis는 SELECT 결과를 저장하기 위해 resultType에 지정된 클래스의 인스턴스를 생성한다.   
+MyBatis는 SELECT 결과를 저장하기 위해 resultType에 지정된 클래스의 인스턴스를 생성한다. 이 때 objectFactory를 사용하는데 아래와 같다. <u>이는 디폴트 생성자가 꼭 필요하고, 없다면 resultType에 매핑될 파라미터를 가진 생성자를 모두 만들어주어야 하는데 이는 비효율적이므로 디폴트 생성자를 만들어주는 것이다.</u> 
+
+![](../assets/spring/마이바티스_생성자관계.PNG)
 
 그리고 각 컬럼에 대응하는 setter를 호출한다.   
 
@@ -192,7 +194,7 @@ SELECT문을 실행하면 레코드 값을 저장하기 위해 결과 객체가 
     
 ## parameterType 속성과 SQL문의 입력 파라미터 처리
 
-JDBC에서 PreparedStatement 객체를 사용해서 SQL문을 실행할때 '?'로 파라미터를 표시하고 setXXX() 메소드를 호출해서 파라미터에 값을 지정한다.
+JDBC에서 PreparedStatement 객체를 사용해서 SQL문을 실행할때 '?'로 파라미터를 표시하고 setXXX() 메소드를 호출해서 파라미터에 값을 지정한다. MyBatis는 명령문에 전달된 실제 매개변수에서 사용할 TypeHandler를 계산할 수 있기 때문에 이 속성은 선택 사항이다. 기본값은 설정되지 않는다. 
 
  ```java
 pstmt = connection.prepareStatement(
