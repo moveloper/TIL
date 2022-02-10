@@ -13,7 +13,8 @@ EC2 생성: https://zzang9ha.tistory.com/329?category=954133
 ```
 ### 유저생성/권한부여 
 sqlplus 로그인  
-sys as sysdba / oracle    
+ID: sys as sysdba
+PW: oracle    
 system / oracle  
 create user homerun identified by homerun;   
 grant connect, resource to homerun;   
