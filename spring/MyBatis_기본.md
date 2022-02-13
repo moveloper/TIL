@@ -194,7 +194,7 @@ SELECT문을 실행하면 레코드 값을 저장하기 위해 결과 객체가 
     
 ## parameterType 속성과 SQL문의 입력 파라미터 처리
 
-JDBC에서 PreparedStatement 객체를 사용해서 SQL문을 실행할때 '?'로 파라미터를 표시하고 setXXX() 메소드를 호출해서 파라미터에 값을 지정한다. MyBatis는 명령문에 전달된 실제 매개변수에서 사용할 TypeHandler를 계산할 수 있기 때문에 이 속성은 선택 사항이다. 기본값은 설정되지 않는다. 
+JDBC에서 PreparedStatement 객체를 사용해서 SQL문을 실행할때 '?'로 파라미터를 표시하고 setXXX() 메소드를 호출해서 파라미터에 값을 지정한다. <u>MyBatis는 명령문에 전달된 실제 매개변수에서 사용할 TypeHandler를 계산할 수 있기 때문에 이 속성은 선택 사항이다. 기본값은 설정되지 않는다. </u>
 
  ```java
 pstmt = connection.prepareStatement(
