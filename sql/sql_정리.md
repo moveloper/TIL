@@ -9,6 +9,42 @@ GROUP BY 컬럼명 -------------------- (3)
 HAVING 그룹 조건 ----------------- (4)
 ORDER BY 컬럼명 -------------------- (6)
 ```
+
+## 식별관계 / 비식별관계 / 외래키
+```
+1. 식별관계 => 외래키를 자신의 기본키로 사용
+2. 비식별관계 => 외래키를 자신의 일반속성으로 사용
+3. 비식별 관계이면서 외래키를 사용하지 않는 경우
+
+1,2번 공통점 => 외래키의 삭제 또는 업데이트 발생시 참조하고 있는 테이블의 데이터를 고려해야함
+3번은 고려안해도 됨 
+
+아래는 외래키 설정시 고려해야하는 속성들
+      
+1) Case 1
+alter table p2 add constraint fk_p2 foreign key(no) references p1(no);
+alter table p3 add constraint fk_p3 foreign key(no) references p1(no);
+
+- 부모 테이블에서 데이터 삭제시 Default로 생성되는 옵션 "NO ACTION"
+- 명시적으로 프로그램에서 자식 테이블의 Row 모두 삭제하고 부모 테이블의 Row를 삭제해야됨
+
+2) Case 2
+alter table p2 add constraint fk_p2 foreign key(no) references p1(no) on delete cascade;
+alter table p3 add constraint fk_p3 foreign key(no) references p1(no) on delete cascade;
+- 부모 테이블에서 데이터 삭제시 자식 테이블의 Row는 자동으로 삭제됨
+
+3) Case 3
+alter table p2 add constraint fk_p2 foreign key(no) references p1(no) on delete set null;  ---- PK는 SET NULL 사용불가
+alter table p3 add constraint fk_p3 foreign key(no) references p1(no) on delete set null;
+- 부모 테이블에서 데이터 삭제시 자식 테이블의 Row는 자동으로 NULL로 업데이트 함
+- 기본키 속성에는 위배됨.(Not Null 제약에 의해서)
+
+* 따라서 Foreign Key 제약 조건에 의해 데이터 무결성을 유지하기 위한 방법으로
+  -Foreign Key 설정시 On Delete 구문을 추가하지 않으면 Default 옵션은  "No Action"
+   .명시적으로 프로그램에서 자식 테이블의 Row를 삭제한후 부모 테이블의 Row를 삭제할수 있음
+  -DB에서 자동으로 데이터를 처리할 경우 기본키는 "On Delete cascade", 일반속성은 "On Delete set null" 를 사용해야 됨.
+출처: https://eunbc-2020.tistory.com/160
+```
 ## cardinality
 데이터베이스에서 카디널리티는 크게 2가지 뜻으로 사용된다. 
 * 먼저 관계 차수의 의미로 사용하는데, 두 엔티티간 관계에서 참여자 수를 표현하는 것이다. 이를테면 1:1, 1:N, N:M 관계의 차수를 이야기 하는 것이다.

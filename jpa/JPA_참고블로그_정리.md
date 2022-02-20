@@ -2,6 +2,26 @@
 
 ## 1. 연관관계 
 * 연관관계에 있는 엔티티는 jpql로 join문을 작성하지 않아도 연관관계에 있는 엔티티의 정보들을 알아서 출력해준다. JPA는 @ManyToOne과 같은 연관관계를 설정하는 어노테이션에서 FetchType.Lazy, FetchType.Eager과 같은 설정을 통해서 데이터베이스의 JOIN과 같은 기능을 구현한다. 즉시 로딩과 지연 로딩과 관련된 자세한 내용은 https://ict-nroo.tistory.com/132  
+* 영속성 컨텍스트가 아닌 자바 객체 상에서 연관 관계를 사용하려면 setter로 값을 주입시켜주어야 한다. 
+```java
+public void updateRetire(int empNo, String retireReason) {
+		EmployeeVO emp = empRepo.findByEmpNo(empNo);
+		emp.setEmpRetdate(new Date());
+		EmployeeVO updatedEmp = empRepo.save(emp);
+		
+		EmpHistoryVO empHis = new EmpHistoryVO();
+		
+		empHis.setEmp(updatedEmp);  // 이 부분
+		empHis.getEmp().setEmpNo(empNo);
+		empHis.setBeforeDept("-");
+		empHis.setBeforePos("-");
+		empHis.setIssuedContent(retireReason);
+		empHis.setIssuedDate(new Date());
+		empHis.setIssuedOrder("퇴사");
+		
+		empHisRepo.save(empHis);
+	}
+```
 
 ## 2. 페이징과 정렬
 기초 이론: https://wonit.tistory.com/483
