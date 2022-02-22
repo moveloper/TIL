@@ -16,4 +16,87 @@ JSP에서 넘겨준 JSON
 JAVA에서 사용
 String code = (String)param.get("code");
 ```
- 
+
+## AJAX로 페이징 할 때 검색어 처리
+AJAX로 구현하지 않았다면 `URL?keyword=''&content=''` 와 같이 서버에 값을 직접 전달하고 그 값을 다시 JSP로 보내주게 되어 검색과 관련된 정보들을 계속 유지할 수 있었다. 하지만 AJAX로 개발할 때 페이지 번호를 누르면 `href=getPage(4)` 와 같이 함수를 호출하고, 그 함수 안에서 AJAX로 통신한다. 
+1. 처음 문제는 Controller가 반환하는 `Page<Employee>` 객체에 내가 원하는 데이터를 set할 수 없었다. ===> HashMap<String, Object> 형태로 반환해서 사용하는 방법이 있다
+2. 현재 페이지의 변하지 않는 부분에 `<input type='hidden>` 으로 검색어 값들을 유지시키는 방법이 있다.
+```javascript
+<!-- 검색어를 저장하기 위한 input -->
+<input type="hidden" id="searchEmp" value="" />
+<input type="hidden" id="searchStart" value="" />
+<input type="hidden" id="searchEnd" value="" />
+
+<!-- 검색 버튼을 눌렀을 때 -->
+$(document).ready(function() {
+	getPage(1);
+	
+	$("#searchBtn1").on("click", function(e){
+		e.preventDefault();
+		
+		const keyword = $("#empName").val();
+		$("#searchEmp").val(keyword);
+		
+		getPage(1);
+	})
+	
+	$("#searchBtn2").on("click", function(e){
+		e.preventDefault();
+	
+		const begin = $("input[name=begin]").val();
+		const end = $("input[name=end]").val();
+		
+		$("#searchStart").val(begin);
+		$("#searchEnd").val(end);
+		getPage(1);
+	})
+	
+});
+
+<!-- getPage() -->
+// 페이지 사이즈 정보 
+var pageSize = $("#listSize option:selected").val();
+
+// 검색 필드
+var field = $("#field").val();
+
+// 검색타입
+var empName = $("#searchEmp").val();
+var start = $("#searchStart").val();
+var end = $("#searchEnd").val();
+
+// 날짜 검색
+if ( field == 'issuedDate'){
+    if(start == '' || end == ''){
+        alert('시작날짜와 종료날짜를 모두 입력해주세요');
+        return;
+    }
+    var data = {pageSize: pageSize, 
+                startDate: start,
+                endDate: end};
+} else {
+    var data = {pageSize: pageSize, 
+                empName: empName};
+}
+
+// 이후 data를 ajax를 통해 백엔드로 보내준다. 
+```
+
+## NULL 과 ''
+```js
+
+if ( field == 'issuedDate'){
+    if(start == '' || end == ''){
+        alert('시작날짜와 종료날짜를 모두 입력해주세요');
+        return;
+    }
+    var data = {pageSize: pageSize, 
+                startDate: start,
+                endDate: end};
+} else {
+    var data = {pageSize: pageSize, 
+                empName: empName};
+}
+
+AJAX로 위와 같이 데이터를 넘겨줄 때, startDate처럼 선언을 해놓고 값 없이 JAVA로 전달하면 `data.get("startDate")` 값이 ''이 되고, 선언을 아예 안한 값을 JAVA에서 `data.get("hello")` 같이 사용하면 값이 NULL이 된다.
+```

@@ -13,3 +13,18 @@ SELECT TO_CHAR(999, 'FM000') FROM DUAL; -- 결과 '999'
 SELECT TRIM(TO_CHAR(999, '000')) FROM DUAL; -- 결과 TRIM(' 999')
 ```
 
+## 오라클 날짜,  시간 차이 계산 방법
+```sql
+날짜 차이 : 종료일자(YYYY-MM-DD) - 시작일자(YYYY-MM-DD)
+시간 차이 : (종료일시(YYYY-MM-DD HH:MI:SS) - 시작일시(YYYY-MM-DD HH:MI:SS)) * 24
+분 차이 : (종료일시(YYYY-MM-DD HH:MI:SS) - 시작일시(YYYY-MM-DD HH:MI:SS)) * 24 * 60
+초 차이 : (종료일시(YYYY-MM-DD HH:MI:SS) - 시작일시(YYYY-MM-DD HH:MI:SS)) * 24 * 60 * 60
+
+종료일자에서 시작일자를 빼면 차이 값이 '일' 기준의 수치 값으로 반환된다.
+계산된 값을 시, 분, 초로 변환하기 위해서는 환산값(24*60*60)을 곱해주어야 한다.
+
+SELECT TO_DATE('2021-05-08', 'YYYY-MM-DD') - TO_DATE('2021-05-01', 'YYYY-MM-DD')
+FROM dual
+
+결과: 7
+```

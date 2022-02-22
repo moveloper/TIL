@@ -14,7 +14,7 @@ h1 요소에 title 속성을 추가하고 속성의 값은 Hello로 한다.
 ```
 
 ## val과 attr 차이 
-val()은 기본 html 문법에서  XXX.value 이고 attr 은  엘리멘트로 접근하는 것
+val()은 기본 html 문법에서  XXX.value 이고 attr 은 엘리멘트로 접근하는 것
 
 
 ## find
