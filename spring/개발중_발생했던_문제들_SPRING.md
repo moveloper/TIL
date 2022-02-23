@@ -117,3 +117,11 @@ AJAX로 위와 같이 데이터를 넘겨줄 때, startDate처럼 선언을 해�
 
 ## 클라우드에 설치된 오라클의 시간대가 맞지 않았을 때
 해결: https://forgiveall.tistory.com/590
+
+## 프로젝트 외부에서 HTML,JSP로 이미지 불러오기
+해결1. controller 단에서 처리     
+https://truecode-95.tistory.com/80      
+해결2. WebConfig에서 처리     
+https://kanetami.tistory.com/99       
+해결3. 톰캣의 Server.xml 수정     
+https://byson.tistory.com/20    
