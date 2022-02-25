@@ -126,5 +126,6 @@ https://kanetami.tistory.com/99
 해결3. 톰캣의 Server.xml 수정     
 https://byson.tistory.com/20    
 
-## ORA-01861: literal does not match format string / 로컬에서는 되는데 서버에서 안되는 
+## ORA-01861: literal does not match format string / 로컬에서는 되는데 서버에서 안되는 상황
+원인: 일단, 원인은 TO_DATE와 TO_CHAR의 함수에 날짜형식을 지정하지 않았을 때 기본값으로 지정되는 형식이 달라서 그렇다.         
 https://m.blog.naver.com/jeemin5/220141590502
