@@ -125,3 +125,6 @@ https://truecode-95.tistory.com/80
 https://kanetami.tistory.com/99       
 해결3. 톰캣의 Server.xml 수정     
 https://byson.tistory.com/20    
+
+## ORA-01861: literal does not match format string / 로컬에서는 되는데 서버에서 안되는 
+https://m.blog.naver.com/jeemin5/220141590502
