@@ -12,12 +12,14 @@ EC2 생성: https://zzang9ha.tistory.com/329?category=954133
 [ec2-user@ip-172-31-11-12 ~]$ sudo docker exec -it oracle11g bash
 ```
 ### 유저생성/권한부여 
-sqlplus 로그인  
-ID: sys as sysdba
-PW: oracle    
-system / oracle  
-create user homerun identified by homerun;   
-grant connect, resource to homerun;   
+sqlplus 로그인    
+ID: sys as sysdba    
+PW: oracle       
+system / oracle     
+create user homerun identified by homerun;     
+grant connect, resource to homerun;      
+오라클 DB의 날짜 확인해보기!
+
 
 ### dbeaver에서 system 관련 스키마가 안보일 경우  
 Connection right-click -> Connection view... -> Show system objects
