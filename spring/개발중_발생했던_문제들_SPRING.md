@@ -117,3 +117,15 @@ AJAX로 위와 같이 데이터를 넘겨줄 때, startDate처럼 선언을 해�
 
 ## 클라우드에 설치된 오라클의 시간대가 맞지 않았을 때
 해결: https://forgiveall.tistory.com/590
+
+## 프로젝트 외부에서 HTML,JSP로 이미지 불러오기
+해결1. controller 단에서 처리     
+https://truecode-95.tistory.com/80      
+해결2. WebConfig에서 처리     
+https://kanetami.tistory.com/99       
+해결3. 톰캣의 Server.xml 수정     
+https://byson.tistory.com/20    
+
+## ORA-01861: literal does not match format string / 로컬에서는 되는데 서버에서 안되는 상황
+원인: 일단, 원인은 TO_DATE와 TO_CHAR의 함수에 날짜형식을 지정하지 않았을 때 기본값으로 지정되는 형식이 달라서 그렇다.         
+https://m.blog.naver.com/jeemin5/220141590502
