@@ -12,6 +12,8 @@ SELECT TO_CHAR(999, '000') FROM DUAL; -- 결과 ' 999'
 SELECT TO_CHAR(999, 'FM000') FROM DUAL; -- 결과 '999'
 SELECT TRIM(TO_CHAR(999, '000')) FROM DUAL; -- 결과 TRIM(' 999')
 ```
+## OUTER JOIN 시 착각하기 쉬운 것
+OUTER JOIN을 하게되면 뭔가 DRIVING TABLE의 ROW 수가 100건이면 100건의 결과만 나와야 될 것 같은 착각을 했다. LEFT OUTER JOIN을 기준으로 1:M의 관계인 경우, 결과 집합의 내용은 LEFT 기준이지만 결과집합의 건수는 RIGHT가 기준이다. 즉 내용은 DRIVING TALBE의 100건에 해당하는 내용이 모두 존재하고, 만약 DRIVEN TABLE에 여러 행이 조건에 일치한다면 100 + a 의 결과 건수가 되는 것이다. INNER JOIN 시에는 건수에 신경안쓰다가, OUTER JOIN 시에 왠지 건수가 기준 테이블 건수와 같아야 된다는 잘못된 생각을 했다.  
 
 ## 오라클 날짜,  시간 차이 계산 방법
 ```sql
@@ -31,6 +33,9 @@ FROM dual
 
 ## 오라클 NULL
 오라클에서 빈 문자열('')은 NULL로 인식하기 때문에, 컬럼의 값이 빈 문자열이면 NULL과 동일한 조건으로 쿼리를 작성해야 한다.
+
+## NVL 함수
+주의할 점: 조사할 컬럼과 치환할 값의 데이터 타입이 같아야 한다. 
 
 ## GROUP BY 없이 단독으로 HAVING이 오는 경우
 GROUP BY와 HAVING은 짝꿍이라고 생각했다. HAVING이 주로 GROUP BY절 뒤에 오는 것은 맞지만, 그렇지 않은 경우도 존재한다. 만약 테이블 전체가 한 개의 그룹이 되는 경우 GROUP BY 없이 단독으로 HAVING을 사용할 수 있다. 
