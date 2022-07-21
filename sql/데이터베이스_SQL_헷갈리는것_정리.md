@@ -1,4 +1,69 @@
-# 개발중 발생했던 문제들
+# SQL 헷갈리는 것들 정리
+
+## ORA-01417: A TABLE MAY BE OUTER JOINED TO AT MOST ONE OTHER TABLE (11g 버전에서)
+원인: 한 테이블에 최대 OUTER JOIN은 한 개 이상이 되면 안됨
+```
+WITH TEST1 AS(
+SELECT '1' NO, '1A' VAL FROM DUAL
+UNION ALL
+SELECT '2' NO, '1B' VAL FROM DUAL
+UNION ALL
+SELECT '3' NO, '1C' VAL FROM DUAL
+UNION ALL
+SELECT '4' NO, '1D' VAL FROM DUAL
+UNION ALL
+SELECT '5' NO, '1E' VAL FROM DUAL
+)
+,
+TEST2 AS (
+SELECT '1' NO, '2A' VAL FROM DUAL
+UNION ALL
+SELECT '3' NO, '2B' VAL FROM DUAL
+UNION ALL
+SELECT '5' NO, '2C' VAL FROM DUAL
+UNION ALL
+SELECT '7' NO, '2D' VAL FROM DUAL
+UNION ALL
+SELECT '9' NO, '2E' VAL FROM DUAL
+)
+,
+TEST3 AS(
+SELECT '1' NO, '3A' VAL FROM DUAL
+UNION ALL
+SELECT '4' NO, '3B' VAL FROM DUAL
+UNION ALL
+SELECT '5' NO, '3C' VAL FROM DUAL
+UNION ALL
+SELECT '9' NO, '3D' VAL FROM DUAL
+UNION ALL
+SELECT '11' NO, '3E' VAL FROM DUAL
+UNION ALL
+SELECT '13' NO, '3F' VAL FROM DUAL
+)
+SELECT * 
+FROM TEST1 A
+   , TEST2 B
+   , TEST3 C
+WHERE A.NO = B.NO(+)
+  AND C.NO = B.NO(+);
+```
+19C 버전에서는 위 쿼리가 실행 가능하다.
+```
+1.      A.NO = B.NO(+)  
+    AND B.NO = C.NO(+)  
+   => A, B OUTER JOIN => 결과테이블과 C OUTER JOIN
+
+2. A LEFT OUTER JOIN B   
+     ON A.NO = B.NO  
+     LEFT OUTER JOIN C  
+     ON B.NO = C.NO 
+   => A, B OUTER JOIN => 결과테이블과 C OUTER JOIN (1번과 동일)
+
+3.     A.NO = B.NO(+)
+   AND C.NO = B.NO(+)
+   => A, C 카타시안곱 !! => 결과테이블, B OUTER JOIN  
+   => 1, 2번과 같은 결과라고 착각했으나 전혀 다른 결과가 
+```
 
 ## TO_CHAR로 숫자를 변환할 때 공백이 생기는 이유와 해결방법
 
@@ -17,6 +82,7 @@ OUTER JOIN을 하게되면 뭔가 DRIVING TABLE의 ROW 수가 100건이면 100�
 
 ## 오라클 날짜,  시간 차이 계산 방법
 ```sql
+
 날짜 차이 : 종료일자(YYYY-MM-DD) - 시작일자(YYYY-MM-DD)
 시간 차이 : (종료일시(YYYY-MM-DD HH:MI:SS) - 시작일시(YYYY-MM-DD HH:MI:SS)) * 24
 분 차이 : (종료일시(YYYY-MM-DD HH:MI:SS) - 시작일시(YYYY-MM-DD HH:MI:SS)) * 24 * 60
