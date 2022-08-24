@@ -64,6 +64,13 @@ WHERE A.NO = B.NO(+)
    => A, C 카타시안곱 !! => 결과테이블, B OUTER JOIN  
    => 1, 2번과 같은 결과라고 착각했으나 전혀 다른 결과가 
 ```
+## SELECT한 쿼리의 결과로우 수가 매번 다르게 나오는 상황 
+- 원인: FROM 절의 인라인 뷰에서 ROW_NUMBER() OVER (PARTITION BY 컬럼명 ORDER BY 컬럼명)을 사용하고 ROWNUM = 1 조건으로 데이터를 가져왔는데, ORDER BY 절에 같은 값이 많아 순서가 일정하지 않은 결과를 가져오게 되었다. 결과값이 일정하지 않다보니 이 인라인뷰와 조인할 때마다 조인에 성공하는 로우수가 달랐던 것이다.
+- 해결: ORDER BY 절에 명확하게 순서를 나눌 수 있는 컬럼을 추가해서 매번 같은 결과값을 보장할 수 있도록 수정하였다. 
+
+## dbms_xplan.display_cursor 를 SQL DEVELOPER에서 사용할 때 발생했던 문제
+원인은 잘 모르겠으나, SQL DEVELOPER에서 해당 패키지 사용시 `cannot fetch plan for SQL_ID` 에러가 발생하였다. 같은 쿼리를 몇 번 날리면 가끔 성공적으로 결과를 불러올 때도 있는데 아닐 때도 있는 상황. 해결방안으로 `set serveroutput off` 하면 된다. 추측하건데, dbms_xplan.display_cursor 사용시 set serveroutput on 일 때 충돌나는 코드가 있는 것 같다. 
+ 
 
 ## TO_CHAR로 숫자를 변환할 때 공백이 생기는 이유와 해결방법
 
@@ -162,6 +169,26 @@ ID	CODE	QUAN        SUM(B.QUAN)
 
 ```
 이린식으로 쿼리가 있을 때 CUBE 함수는 모든 경우의 수를 출력하고(위에서는 2^3 = 8가지 케이스) 각각의 소계를 출력해준다고 생각하면 된다. 여기서 (B.CODE, B.QUAN)가 이해가 안되었는데, A.ID를 A, B.CODE를 B, B.QUAN을 C라고 했을 때 조합이 (A,B,(B,C)), (A,B), (B,(B,C)), ((B,C), A), (A), (B), ((B,C)), () 이다. 여기서 (A,B,(B,C)), (B,(B,C)), ((B,C), A), ((B, C))에 B가 중복되어 같은 데이터가 테이블로 출력되는 것처럼 보인다. 그러나 인간이 보기에는 같은 데이터일지는 몰라도 오라클은 B와 (B, C)를 독립적인 컬럼으로 인식하고 각각을 중복되지 않는 데이터로 인식하기 때문에 위와같이 중복되는 행들이 출력되는 것이다. 때문에 (A,<u>**B**</u>,(B,C)) 와 ((<u>**B**</u>,C), A) 총계는 중복된 것처럼 보여 두 번씩 나타나고 있고, 마찬가지로 (B,(B,C))와 ((B,C)) 총계 역시 두 번 나타나는 거슬 볼 수 있다. 같은 통계인 것처럼 보이지만 사실 각각 다른 통계를 나타내는 것이다
+
+
+## PRIMARY KEY 삭제시 유의할 점
+ALTER TABLE 테이블명 DROP PRIMARY KEY; 구문을 사용할 때 주의할 점이 있다. PRIMARY KEY를 생성하는 방법에 따라 제약조건과 인덱스 모두가 삭제 될 때가 있고, 제약조건만 삭제되고 인덱스는 그대로 남아 있는 경우가 발생하기도 한다. PRIMARY KEY를 생성할 때 인덱스와 제약조건을 동시에 생성하면 삭제할 때도 동시에 삭제가 되고, 이미 생성된 인덱스를 사용해서 PRIMARY KEY를 생성하면, 위 구문 수행시 제약조건만 삭제가 되고 인덱스는 남아있는다.    
+이미 운영중인 시스템에서 PRIMARY KEY를 삭제 및 변경해야 한다면 아래와 같이 명시해서 작업하는 것이 바람직하다. 
+```
+1. 인덱스와 제약조건을 한번에 삭제
+ALTER TABLE 테이블명 DROP PRIMARY KEY DROP INDEX;
+2. 제약조건만 삭제하고 인덱스를 남겨놓고 싶을 때
+ALTER TABLE 테이블명 DROP PRIMARY KEY KEEP INDEX;
+```
+
+## MERGE INTO 
+https://wakestand.tistory.com/121
+```
+주의할 점
+1. SQL 오류: ORA-38104: ON 절에서 참조되는 열은 업데이트할 수 없음: "A"."JOB"
+38104. 00000 -  "Columns referenced in the ON Clause cannot be updated: %s"
+2. UPDATE 후 DELETE문은 <MATCHED 된 데이터를 대상>으로 한다. 
+```
 
 ## INSERT문에 SELECT문
 ```sql 
