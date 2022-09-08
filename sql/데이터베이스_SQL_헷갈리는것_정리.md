@@ -69,8 +69,74 @@ WHERE A.NO = B.NO(+)
 - 해결: ORDER BY 절에 명확하게 순서를 나눌 수 있는 컬럼을 추가해서 매번 같은 결과값을 보장할 수 있도록 수정하였다. 
 
 ## dbms_xplan.display_cursor 를 SQL DEVELOPER에서 사용할 때 발생했던 문제
-원인은 잘 모르겠으나, SQL DEVELOPER에서 해당 패키지 사용시 `cannot fetch plan for SQL_ID` 에러가 발생하였다. 같은 쿼리를 몇 번 날리면 가끔 성공적으로 결과를 불러올 때도 있는데 아닐 때도 있는 상황. 해결방안으로 `set serveroutput off` 하면 된다. 추측하건데, dbms_xplan.display_cursor 사용시 set serveroutput on 일 때 충돌나는 코드가 있는 것 같다. 
+원인은 잘 모르겠으나, SQL DEVELOPER에서 해당 패키지 사용시 `cannot fetch plan for SQL_ID` 에러가 발생하였다. 같 은 쿼리를 몇 번 날리면 가끔 성공적으로 결과를 불러올 때도 있는데 아닐 때도 있는 상황. 해결방안으로 `set serveroutput off` 하면 된다. 추측하건데, dbms_xplan.display_cursor 사용시 set serveroutput on 일 때 충돌나는 코드가 있는 것 같다. 
  
+## 3개 이상 테이블을 OUTER JOIN 할 때 
+```
+WITH TAB1 AS(
+SELECT '1' COL1, '1' CO2 FROM DUAL
+UNION ALL
+SELECT '2' COL1, '2' CO2 FROM DUAL
+UNION ALL
+SELECT '3' COL1, '3' CO2 FROM DUAL
+)
+,
+TAB2 AS (
+SELECT '1' COL1, '1' CO2 FROM DUAL
+UNION ALL
+SELECT '1' COL1, '1' CO2 FROM DUAL
+UNION ALL
+SELECT '1' COL1, '1' CO2 FROM DUAL
+UNION ALL
+SELECT '2' COL1, '2' CO2 FROM DUAL
+UNION ALL
+SELECT '2' COL1, '2' CO2 FROM DUAL
+UNION ALL
+SELECT '3' COL1, '3' CO2 FROM DUAL
+)
+,
+TAB3 AS(
+SELECT '3' COL1, '3' CO2 FROM DUAL
+UNION ALL
+SELECT '3' COL1, '3' CO2 FROM DUAL
+)
+
+1)
+SELECT *
+FROM TAB1 A
+   , TAB2 B
+   , TAB3 C
+WHERE A.COL1 = B.COL1(+)
+  AND A.COL1 = C.COL1(+)
+
+1	1	1	1		
+1	1	1	1		
+1	1	1	1		
+2	2	2	2		
+2	2	2	2		
+3	3	3	3	3	3
+3	3	3	3	3	3
+
+2)
+SELECT *
+FROM TAB1 A
+   , TAB2 B
+   , TAB3 C
+WHERE A.COL1 = B.COL1(+)
+  AND B.COL1 = C.COL1(+)
+
+3	3	3	3	3	3
+3	3	3	3	3	3
+1	1	1	1		
+1	1	1	1		
+1	1	1	1		
+2	2	2	2		
+2	2	2	2		  
+
+1번 쿼리는 TAB1을 TAB2와 조인한 결과테이블에서 TAB1 기준으로 다시 TAB3과 조인하여 결과를 가져온다.   
+2번 쿼리는 TAB1을 TAB2와 조인한 결과테이블에서 TAB2 기준으로 다시 TAB3과 조인하여 결과를 가져온다.  
+```
+
 
 ## TO_CHAR로 숫자를 변환할 때 공백이 생기는 이유와 해결방법
 
@@ -86,6 +152,15 @@ SELECT TRIM(TO_CHAR(999, '000')) FROM DUAL; -- 결과 TRIM(' 999')
 ```
 ## OUTER JOIN 시 착각하기 쉬운 것
 OUTER JOIN을 하게되면 뭔가 DRIVING TABLE의 ROW 수가 100건이면 100건의 결과만 나와야 될 것 같은 착각을 했다. LEFT OUTER JOIN을 기준으로 1:M의 관계인 경우, 결과 집합의 내용은 LEFT 기준이지만 결과집합의 건수는 RIGHT가 기준이다. 즉 내용은 DRIVING TALBE의 100건에 해당하는 내용이 모두 존재하고, 만약 DRIVEN TABLE에 여러 행이 조건에 일치한다면 100 + a 의 결과 건수가 되는 것이다. INNER JOIN 시에는 건수에 신경안쓰다가, OUTER JOIN 시에 왠지 건수가 기준 테이블 건수와 같아야 된다는 잘못된 생각을 했다.  
+
+## MERGE INTO 
+https://wakestand.tistory.com/121
+```
+주의할 점
+1. SQL 오류: ORA-38104: ON 절에서 참조되는 열은 업데이트할 수 없음: "A"."JOB"
+38104. 00000 -  "Columns referenced in the ON Clause cannot be updated: %s"
+2. UPDATE 후 DELETE문은 <MATCHED 된 데이터를 대상>으로 한다. 
+```
 
 ## 오라클 날짜,  시간 차이 계산 방법
 ```sql
@@ -103,9 +178,26 @@ FROM dual
 
 결과: 7
 ```
+## CASE문과 NULL
+```
+SELECT CASE WHEN NULL IS NULL THEN 'A' ELSE 'B' END // A
+FROM DUAL
 
+SELECT CASE NULL WHEN NULL THEN 'A' ELSE 'B' END // B
+FROM DUAL
+
+아래 쿼리처럼 CASE의 조건문이 NULL = NULL로 처리가 되므로 'A'가 아닌 'B'를 반환한다.
+NULL = NULL은 FALSE
+```
+
+## COUNT(*) 과 NULL 
+```
+COUNT(컬럼명)을 사용하면 NULL값은 제외하고 COUNT 한다.  
+COUNT(*)을 사용하면 NULL도 포함하여 전부 COUNT 한다.
+```
 ## 오라클 NULL
 오라클에서 빈 문자열('')은 NULL로 인식하기 때문에, 컬럼의 값이 빈 문자열이면 NULL과 동일한 조건으로 쿼리를 작성해야 한다.
+반면 MySQL이나 SQLserver에서는 빈 문자열이 그대로 입력된다.
 
 ## NVL 함수
 주의할 점: 조사할 컬럼과 치환할 값의 데이터 타입이 같아야 한다. 
@@ -179,15 +271,6 @@ ALTER TABLE 테이블명 DROP PRIMARY KEY; 구문을 사용할 때 주의할 점
 ALTER TABLE 테이블명 DROP PRIMARY KEY DROP INDEX;
 2. 제약조건만 삭제하고 인덱스를 남겨놓고 싶을 때
 ALTER TABLE 테이블명 DROP PRIMARY KEY KEEP INDEX;
-```
-
-## MERGE INTO 
-https://wakestand.tistory.com/121
-```
-주의할 점
-1. SQL 오류: ORA-38104: ON 절에서 참조되는 열은 업데이트할 수 없음: "A"."JOB"
-38104. 00000 -  "Columns referenced in the ON Clause cannot be updated: %s"
-2. UPDATE 후 DELETE문은 <MATCHED 된 데이터를 대상>으로 한다. 
 ```
 
 ## INSERT문에 SELECT문
