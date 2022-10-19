@@ -180,6 +180,10 @@ https://wakestand.tistory.com/121
     
 ```
 
+## CREATE TABLE .. AS SELECT (CTAS)시 주의할점 
+SELECT절에서 SUBSTR 함수나 TO_CHAR 함수같이 데이터를 가공해서 CREATE TABLE 하는 경우에 데이터베이스 엔진(추측컨데 DB의 CHARACTER SET에 따라)에 의해 원하지 않는 길이의 형태로 테이블이 생성될 수 있다. 실무에서 SUBSTR('41110')은 VARCHAR2(10)으로 변환되고, TO_CHAR(NUMBER 타입의 컬럼, 길이 20) 인 경우에는 VARCHAR(40)으로 테이블이 생성되었다. 또한 검색하다보니 DB LINK를 사용했을 때도 컬럼길이가 달라지는 현상이 있다고 한다. 명확한 컬럼 길이로 CTAS 하고 싶다면, CAST 함수를 사용해서 만들어야 한다. 
+
+
 ## 오라클 날짜,  시간 차이 계산 방법
 ```sql
 
@@ -228,6 +232,9 @@ ORDER BY (CASE WHEN 주문상태 = '배송완료' THEN 1 ELSE 9 END ), 주문일
 
 ## NVL 함수
 주의할 점: 조사할 컬럼과 치환할 값의 데이터 타입이 같아야 한다. 
+
+## DISTINCT와 ROWNUM
+SELECT 다음에 DISTINCT가 이뤄지기 때문에 WHERE ROWNUM <= 1000이라는 조건을 주고 SELECT 된 값중에 중복값이 존재한다면, 1000개 이하의 데이터가 출력된다. 
 
 ## GROUP BY 없이 단독으로 HAVING이 오는 경우
 GROUP BY와 HAVING은 짝꿍이라고 생각했다. HAVING이 주로 GROUP BY절 뒤에 오는 것은 맞지만, 그렇지 않은 경우도 존재한다. 만약 테이블 전체가 한 개의 그룹이 되는 경우 GROUP BY 없이 단독으로 HAVING을 사용할 수 있다. 
@@ -298,6 +305,27 @@ ALTER TABLE 테이블명 DROP PRIMARY KEY; 구문을 사용할 때 주의할 점
 ALTER TABLE 테이블명 DROP PRIMARY KEY DROP INDEX;
 2. 제약조건만 삭제하고 인덱스를 남겨놓고 싶을 때
 ALTER TABLE 테이블명 DROP PRIMARY KEY KEEP INDEX;
+```
+
+## PRIMARY KEY 생성하는 여러가지 방법
+1. 테이블 생성 시 제약 조건 생성 
+```
+CREATE TABLE TEST1( COL1 NUMBER 
+                  , COL2 NUMBER 
+                  , CONSTRAINT PK_TEST1 PRIMARY KEY(COL1)
+                  );
+```
+2. 유니크 인덱스 생성 후 PK로 지정
+```
+CREATE UNIQUE INDEX PK_TEST1 ON TEST1(COL1);
+ALTER TABLE TEST1 ADD CONSTRAINTS PK_TEST1 PRIMARY KEY(COL1);
+```
+3. ALTER TABLE... ADD PRIMARY KEY 
+```
+PK명은 SYS*** 으로 생성됨
+ALTER TABLE TEST_TABLE ADD PRIMARY KEY(USER_ID..)
+ > 해당 컬럼으로 미리 만들어 둔 인덱스가 없는 경우: CONSTRAINT 명칭과 동일한 이름으로 인덱스 자동 생성 됨
+ > 해당 컬럼으로 미리 만들어 둔 인덱스가 있는 경우: 해당 인덱스를 이용함, 별도 인덱스 생성 안함
 ```
 
 ## WHERE 1=1 사용이유
