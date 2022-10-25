@@ -328,6 +328,29 @@ ALTER TABLE TEST_TABLE ADD PRIMARY KEY(USER_ID..)
  > 해당 컬럼으로 미리 만들어 둔 인덱스가 있는 경우: 해당 인덱스를 이용함, 별도 인덱스 생성 안함
 ```
 
+## INSERT INTO ... SELECT문에서 주의할 점
+```
+1. INSERT INTO ... SELECT 문에서 SELECT 절에 별칭은 의미가 없다. 
+INSERT INTO 테이블 
+SELECT '1' PK3, '2' PK1, '3' PK3 FROM DUAL
+-- 결과 
+PK1 PK2 PK3
+ 1   2   3
+
+
+2. INSERT 절에 컬럼을 명시한다면, 명시된 컬럼 순서대로 INSERT 된다. 여기서도 SELECT 절의 별칭은 의미가 없다. 
+-- 쿼리
+INSERT INTO TABLE 
+(PK2, PK3, PK1)
+SELECT '1번' AS PK1
+     , '2번' AS PK2
+     , '3번' AS PK3
+  FROM DUAL 
+-- 결과 
+PK1 PK2 PK3
+3번 1번 2번 
+```
+
 ## WHERE 1=1 사용이유
 1. 쿼리 디버깅 시, 주석처리가 편하다.
 2. 동적쿼리에서 특정상황마다 WHERE 절을 다르게줘야 할 때 편하다.
