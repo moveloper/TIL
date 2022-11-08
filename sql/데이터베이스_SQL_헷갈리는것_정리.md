@@ -136,6 +136,21 @@ WHERE A.COL1 = B.COL1(+)
 1번 쿼리는 TAB1을 TAB2와 조인한 결과테이블에서 TAB1 기준으로 다시 TAB3과 조인하여 결과를 가져온다.   
 2번 쿼리는 TAB1을 TAB2와 조인한 결과테이블에서 TAB2 기준으로 다시 TAB3과 조인하여 결과를 가져온다.  
 ```
+## 관계성이 없는 임시테이블끼리 조인할 때 생각해야할 것들..
+데이터 이관업무를 하면서 한 가지 어려웠던 점은 테이블끼리 관계가 설계되어있지 않은 테이블들끼리 조인을 하는 것이었다. 물리적으로 1:1, 1:M, N:M 관계가 설정된 것이 아니기 때문에 조인했을 때 결과를 예측할 수 있어야 했다. 예를 들면 A와 B 테이블의 논리적 관계가 M:1일 때, B테이블의 pk와 같이 유니크한 컬럼과 조인을 하면 A테이블이 100건 일 때, 조인되는 결과값도 100건일 것이다. 그 다음 A와 C테이블이 조인할 때 1:M 관계라고 해보자. A의 pk 컬럼으로 C의 유니크하지 않은 컬럼과 조인한다면 그 결과는 M건이 발생한다(A테이블 100건, C테이블 120건이면 모두 조인된다고 했을 때 120건이 됨). 하지만 C의 pk는 유니크하다. 반면에 A의 유니크하지 않은 컬럼과 C의 유니크하지 않은 컬럼끼리 조인을 하게 되면, M:N관계가 되어 중복에 따라 C와 조인에 성공하는 로우도 중복되게 된다. 따라서 결과 값을 보면 C의 pk는 유니크하지 않게 된다(A테이블의 2건이 1건의 C와 조인될 수 있다)
+```
+pk1  pk2  col        pk1  pk2  col1  col2  col3
+ 1    1    가         A    B    1     1     다
+ 1    2    다         A    C    1     1     다
+ 1    3    다         A    D    1     3     다 
+
+B테이블 pk가 unique
+ A.pk1 = B.col1
+ A.pk2 = B.col2 
+
+B테이블 pk가 non unique
+ A.col1 = B.col3
+```
 
 
 ## TO_CHAR로 숫자를 변환할 때 공백이 생기는 이유와 해결방법
@@ -231,10 +246,19 @@ ORDER BY (CASE WHEN 주문상태 = '배송완료' THEN 1 ELSE 9 END ), 주문일
 ## 오라클 NULL
 1. 오라클에서 빈 문자열('')은 NULL로 인식하기 때문에, 컬럼의 값이 빈 문자열이면 NULL과 동일한 조건으로 쿼리를 작성해야 한다.
 반면 MySQL이나 SQLserver에서는 빈 문자열이 그대로 입력된다.
-2. NULL 값이 존재하는 컬럼에서 WHERE 조건에 <> '3' 과 같은 조건을 걸면 NULL인 컬럼은 SELECT 되지 않는다. 
+2. NULL 값이 존재하는 컬럼에서 WHERE 조건에 <> '3' 과 같은 조건을 걸면 NULL인 컬럼은 SELECT 되지 않는다. 마찬가지로 INNER JOIN에 사용되는 컬럼에 NULL 값이 존재하면 JOIN 되지 않는다.
 
 ## NVL 함수
 주의할 점: 조사할 컬럼과 치환할 값의 데이터 타입이 같아야 한다. 
+
+## VALIDATE_CONVERSION 함수 (오라클 12c R2 이상)
+```SQL
+SELECT VALIDATE_CONVERSION('2021-07-08' AS DATE, 'YYYY-MM-DD')
+  FROM dual
+날짜형식이 맞으면 1을, 틀리면 0을 반환한다. 
+주의할 점은 NULL 값을 넣어도 1이 반환되기 때문에, NOT NULL 컬럼에서 
+CASE WHEN VALIDATE_CONVERSION('NULL포함된컬럼' AS DATE, 'YYYY-MM-DD') = 1 THEN 'NULL포함된컬럼' ELSE TO_CHAR(SYSDATE, 'YYYY-MM-DD') END 와 같이 조건을 준다면 NULL 값으로 변환되어 버리게 되므로 주의하자.  
+```
 
 ## DISTINCT와 ROWNUM
 SELECT 다음에 DISTINCT가 이뤄지기 때문에 WHERE ROWNUM <= 1000이라는 조건을 주고 SELECT 된 값중에 중복값이 존재한다면, 1000개 이하의 데이터가 출력된다. 
