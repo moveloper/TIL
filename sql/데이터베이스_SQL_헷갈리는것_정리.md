@@ -152,7 +152,6 @@ B테이블 pk가 non unique
  A.col1 = B.col3
 ```
 
-
 ## TO_CHAR로 숫자를 변환할 때 공백이 생기는 이유와 해결방법
 
 숫자를 문자로 변환할 때 가장 많이 사용하는 함수. TO_CHAR    
@@ -169,7 +168,7 @@ SELECT TRIM(TO_CHAR(999, '000')) FROM DUAL; -- 결과 TRIM(' 999')
 OUTER JOIN을 하게되면 뭔가 DRIVING TABLE의 ROW 수가 100건이면 100건의 결과만 나와야 될 것 같은 착각을 했다. LEFT OUTER JOIN을 기준으로 1:M의 관계인 경우, 결과 집합의 내용은 LEFT 기준이지만 결과집합의 건수는 RIGHT가 기준이다. 즉 내용은 DRIVING TALBE의 100건에 해당하는 내용이 모두 존재하고, 만약 DRIVEN TABLE에 여러 행이 조건에 일치한다면 100 + a 의 결과 건수가 되는 것이다. INNER JOIN 시에는 건수에 신경안쓰다가, OUTER JOIN 시에 왠지 건수가 기준 테이블 건수와 같아야 된다는 잘못된 생각을 했다.  
 
 ## MERGE INTO 
-https://wakestand.tistory.com/121
+https://gent.tistory.com/406
 ```
 주의할 점
 1. SQL 오류: ORA-38104: ON 절에서 참조되는 열은 업데이트할 수 없음: "A"."JOB"
@@ -260,6 +259,29 @@ SELECT VALIDATE_CONVERSION('2021-07-08' AS DATE, 'YYYY-MM-DD')
 CASE WHEN VALIDATE_CONVERSION('NULL포함된컬럼' AS DATE, 'YYYY-MM-DD') = 1 THEN 'NULL포함된컬럼' ELSE TO_CHAR(SYSDATE, 'YYYY-MM-DD') END 와 같이 조건을 준다면 NULL 값으로 변환되어 버리게 되므로 주의하자.  
 ```
 
+## INSERT INTO ... SELECT문에서 주의할 점
+```
+1. INSERT INTO ... SELECT 문에서 SELECT 절에 별칭은 의미가 없다. 
+INSERT INTO 테이블 
+SELECT '1' PK3, '2' PK1, '3' PK3 FROM DUAL
+-- 결과 
+PK1 PK2 PK3
+ 1   2   3
+
+
+2. INSERT 절에 컬럼을 명시한다면, 명시된 컬럼 순서대로 INSERT 된다. 여기서도 SELECT 절의 별칭은 의미가 없다. 
+-- 쿼리
+INSERT INTO TABLE 
+(PK2, PK3, PK1)
+SELECT '1번' AS PK1
+     , '2번' AS PK2
+     , '3번' AS PK3
+  FROM DUAL 
+-- 결과 
+PK1 PK2 PK3
+3번 1번 2번 
+```
+
 ## DISTINCT와 ROWNUM
 SELECT 다음에 DISTINCT가 이뤄지기 때문에 WHERE ROWNUM <= 1000이라는 조건을 주고 SELECT 된 값중에 중복값이 존재한다면, 1000개 이하의 데이터가 출력된다. 
 
@@ -271,6 +293,16 @@ SELECT COUNT(*) "전체 행수", COUNT(HEIGHT) "키 건수",
         ROUND(AVG(HEIGHT),2) 평균키 
 FROM PLAYER;
 HAVING MAX(HEIGHT) > 170
+```
+
+## 중첩 서브쿼리 사용시 몰랐던 점
+```
+SELECT A.COL1
+  FROM TAB1 A
+ WHERE A.CO1 IN (SELECT A.COL1 
+                  FROM TAB2 B)
+중첩서브쿼리로 필터링하는 쿼리를 만들다가 잘못하여 바깥쪽 컬럼을 서브쿼리의 SELECT 절에 두어 사용했는데, 오류가 발생하지 않아서 잘못하면 그냥 넘길뻔한 경우가 있었다. 
+중첩서브쿼리 안에서 바깥쪽 테이블의 컬럼을 SELECT 절에 두어도 오류가 발생하지 않는다(FROM절 -> WHERE절 순으로 동작하기 때문). 또한 TAB2를 그저 스캔만 할 뿐이다.
 ```
 
 ## CUBE 함수
@@ -353,29 +385,6 @@ PK명은 SYS*** 으로 생성됨
 ALTER TABLE TEST_TABLE ADD PRIMARY KEY(USER_ID..)
  > 해당 컬럼으로 미리 만들어 둔 인덱스가 없는 경우: CONSTRAINT 명칭과 동일한 이름으로 인덱스 자동 생성 됨
  > 해당 컬럼으로 미리 만들어 둔 인덱스가 있는 경우: 해당 인덱스를 이용함, 별도 인덱스 생성 안함
-```
-
-## INSERT INTO ... SELECT문에서 주의할 점
-```
-1. INSERT INTO ... SELECT 문에서 SELECT 절에 별칭은 의미가 없다. 
-INSERT INTO 테이블 
-SELECT '1' PK3, '2' PK1, '3' PK3 FROM DUAL
--- 결과 
-PK1 PK2 PK3
- 1   2   3
-
-
-2. INSERT 절에 컬럼을 명시한다면, 명시된 컬럼 순서대로 INSERT 된다. 여기서도 SELECT 절의 별칭은 의미가 없다. 
--- 쿼리
-INSERT INTO TABLE 
-(PK2, PK3, PK1)
-SELECT '1번' AS PK1
-     , '2번' AS PK2
-     , '3번' AS PK3
-  FROM DUAL 
--- 결과 
-PK1 PK2 PK3
-3번 1번 2번 
 ```
 
 ## WHERE 1=1 사용이유
