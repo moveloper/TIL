@@ -64,13 +64,6 @@ WHERE A.NO = B.NO(+)
    => A, C 카타시안곱 !! => 결과테이블, B OUTER JOIN  
    => 1, 2번과 같은 결과라고 착각했으나 전혀 다른 결과가 
 ```
-## SELECT한 쿼리의 결과로우 수가 매번 다르게 나오는 상황 
-- 원인: FROM 절의 인라인 뷰에서 ROW_NUMBER() OVER (PARTITION BY 컬럼명 ORDER BY 컬럼명)을 사용하고 ROWNUM = 1 조건으로 데이터를 가져왔는데, ORDER BY 절에 같은 값이 많아 순서가 일정하지 않은 결과를 가져오게 되었다. 결과값이 일정하지 않다보니 이 인라인뷰와 조인할 때마다 조인에 성공하는 로우수가 달랐던 것이다.
-- 해결: ORDER BY 절에 명확하게 순서를 나눌 수 있는 컬럼을 추가해서 매번 같은 결과값을 보장할 수 있도록 수정하였다. 
-
-## dbms_xplan.display_cursor 를 SQL DEVELOPER에서 사용할 때 발생했던 문제
-원인은 잘 모르겠으나, SQL DEVELOPER에서 해당 패키지 사용시 `cannot fetch plan for SQL_ID` 에러가 발생하였다. 같 은 쿼리를 몇 번 날리면 가끔 성공적으로 결과를 불러올 때도 있는데 아닐 때도 있는 상황. 해결방안으로 `set serveroutput off` 하면 된다. 추측하건데, dbms_xplan.display_cursor 사용시 set serveroutput on 일 때 충돌나는 코드가 있는 것 같다. 
- 
 ## 3개 이상 테이블을 OUTER JOIN 할 때 
 ```
 WITH TAB1 AS(
@@ -136,6 +129,15 @@ WHERE A.COL1 = B.COL1(+)
 1번 쿼리는 TAB1을 TAB2와 조인한 결과테이블에서 TAB1 기준으로 다시 TAB3과 조인하여 결과를 가져온다.   
 2번 쿼리는 TAB1을 TAB2와 조인한 결과테이블에서 TAB2 기준으로 다시 TAB3과 조인하여 결과를 가져온다.  
 ```
+
+## SELECT한 쿼리의 결과로우 수가 매번 다르게 나오는 상황 
+- 원인: FROM 절의 인라인 뷰에서 ROW_NUMBER() OVER (PARTITION BY 컬럼명 ORDER BY 컬럼명)을 사용하고 ROWNUM = 1 조건으로 데이터를 가져왔는데, ORDER BY 절에 같은 값이 많아 순서가 일정하지 않은 결과를 가져오게 되었다. 결과값이 일정하지 않다보니 이 인라인뷰와 조인할 때마다 조인에 성공하는 로우수가 달랐던 것이다.
+- 해결: ORDER BY 절에 명확하게 순서를 나눌 수 있는 컬럼을 추가해서 매번 같은 결과값을 보장할 수 있도록 수정하였다. 
+
+## dbms_xplan.display_cursor 를 SQL DEVELOPER에서 사용할 때 발생했던 문제
+원인은 잘 모르겠으나, SQL DEVELOPER에서 해당 패키지 사용시 `cannot fetch plan for SQL_ID` 에러가 발생하였다. 같 은 쿼리를 몇 번 날리면 가끔 성공적으로 결과를 불러올 때도 있는데 아닐 때도 있는 상황. 해결방안으로 `set serveroutput off` 하면 된다. 추측하건데, dbms_xplan.display_cursor 사용시 set serveroutput on 일 때 충돌나는 코드가 있는 것 같다. 
+ 
+
 ## 관계성이 없는 임시테이블끼리 조인할 때 생각해야할 것들..
 데이터 이관업무를 하면서 한 가지 어려웠던 점은 테이블끼리 관계가 설계되어있지 않은 테이블들끼리 조인을 하는 것이었다. 물리적으로 1:1, 1:M, N:M 관계가 설정된 것이 아니기 때문에 조인했을 때 결과를 예측할 수 있어야 했다. 예를 들면 A와 B 테이블의 논리적 관계가 M:1일 때, B테이블의 pk와 같이 유니크한 컬럼과 조인을 하면 A테이블이 100건 일 때, 조인되는 결과값도 100건일 것이다. 그 다음 A와 C테이블이 조인할 때 1:M 관계라고 해보자. A의 pk 컬럼으로 C의 유니크하지 않은 컬럼과 조인한다면 그 결과는 M건이 발생한다(A테이블 100건, C테이블 120건이면 모두 조인된다고 했을 때 120건이 됨). 하지만 C의 pk는 유니크하다. 반면에 A의 유니크하지 않은 컬럼과 C의 유니크하지 않은 컬럼끼리 조인을 하게 되면, M:N관계가 되어 중복에 따라 C와 조인에 성공하는 로우도 중복되게 된다. 따라서 결과 값을 보면 C의 pk는 유니크하지 않게 된다(A테이블의 2건이 1건의 C와 조인될 수 있다)
 ```
@@ -164,8 +166,11 @@ SELECT TO_CHAR(999, '000') FROM DUAL; -- 결과 ' 999'
 SELECT TO_CHAR(999, 'FM000') FROM DUAL; -- 결과 '999'
 SELECT TRIM(TO_CHAR(999, '000')) FROM DUAL; -- 결과 TRIM(' 999')
 ```
+
+또 하나 주의할 점은 NUMBER타입을 CHAR타입 컬럼에 INSERT 할 때도 공백이 생기는 것이다. 예를 들면 CHAR(10) 컬럼에 숫자 3을 INESRT하면 '3         '로 자동 형변환이 되어 의도하지 않은 결과를 가져온다. 반면 VARCHAR(10) 컬럼럼에 INSERT하면 사용한 데이터 크기 만큼만 차지하므로 '3'으로 INSERT 된다. 
+
 ## OUTER JOIN 시 착각하기 쉬운 것
-OUTER JOIN을 하게되면 뭔가 DRIVING TABLE의 ROW 수가 100건이면 100건의 결과만 나와야 될 것 같은 착각을 했다. LEFT OUTER JOIN을 기준으로 1:M의 관계인 경우, 결과 집합의 내용은 LEFT 기준이지만 결과집합의 건수는 RIGHT가 기준이다. 즉 내용은 DRIVING TALBE의 100건에 해당하는 내용이 모두 존재하고, 만약 DRIVEN TABLE에 여러 행이 조건에 일치한다면 100 + a 의 결과 건수가 되는 것이다. INNER JOIN 시에는 건수에 신경안쓰다가, OUTER JOIN 시에 왠지 건수가 기준 테이블 건수와 같아야 된다는 잘못된 생각을 했다.  
+OUTER JOIN을 하게되면 뭔가 DRIVING TABLE의 ROW 수가 100건이면 100건의 결과만 나와야 될 것 같은 착각을 했다. <u>LEFT OUTER JOIN을 기준으로 1:M의 관계인 경우, 결과 집합의 내용은 LEFT 기준이지만 결과집합의 건수는 RIGHT가 기준이다</u>. 즉 내용은 DRIVING TALBE의 100건에 해당하는 내용이 모두 존재하고, 만약 DRIVEN TABLE에 여러 행이 조건에 일치한다면 100 + a 의 결과 건수가 되는 것이다. INNER JOIN 시에는 건수에 신경안쓰다가, OUTER JOIN 시에 왠지 건수가 기준 테이블 건수와 같아야 된다는 잘못된 생각을 했다.  
 
 ## MERGE INTO 
 https://gent.tistory.com/406
