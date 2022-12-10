@@ -310,6 +310,81 @@ SELECT A.COL1
 중첩서브쿼리 안에서 바깥쪽 테이블의 컬럼을 SELECT 절에 두어도 오류가 발생하지 않는다(FROM절 -> WHERE절 순으로 동작하기 때문). 또한 TAB2를 그저 스캔만 할 뿐이다.
 ```
 
+## LEVEL을 WHERE절에서 활용한 쿼리
+```sql
+-- TABLE.COL1 공백제거 전과 후의 길이 차이에 따라, LEV로 뻥튀기된 데이터의 개수를 조절해서 가져옴.  
+SELECT A.COL1
+     , A.COL2
+     , A.COL3
+     , ROW_NUMBER() OVER(PARTITION BY A.COL1, A.COL2 ORDER BY LEV) AS RUNM 
+     , REGEXP_SUBSTR(A.COL3, '[^ ]+', 1, LEV) AS PK
+  FROM TABLE1 A
+     , (SELECT LEVEL AS LEV FROM DUAL CONNECT BY LEVEL <= 10>)
+ WHERE LEV <= LENGTH(A.COL1) - (LENGTH(REPLACE(A.COL1, ' ')) + 1) 
+```
+## REGEXP_SUBSTR 사용법 
+```SQL
+/*
+REGEXP_SUBSTR(COLUMN, [REG_EXP], [START_INDEX], [GROUP_INDEX])
+REG_EXP
+  대괄호 [] 안의 ^ 는  NOT의 의미를 나타냄
+  ^ 문자가 대괄호 밖에서 사용되면 문자열의 시작을 의미함
+  + 는 문자패턴이 1개이상 연결될 때를 나타냄, 위 예제에서 01,03등 2개이상 나타내기 위함
+START_INDEX
+  검색의 시작지점 
+GROUP INDEX
+  잘려진 그룹이 2개 이상이라면 GROUP INDEX에 해당하는 그룹을 출력한다
+*/  
+SELECT REGEXP_SUBSTR('C123-456-789','[^-]+',1,1) FROM DUAL;
+ 결과 = C123
+SELECT REGEXP_SUBSTR('C123-456-789','[^-]+',1,2) FROM DUAL;
+ 결과 = 456
+SELECT REGEXP_SUBSTR('C123-456-789','[^-]+',1,3) FROM DUAL;
+ 결과 = 789
+SELECT REGEXP_SUBSTR('C123-456-789','[^-]+',3,1) FROM DUAL;
+ 결과 = 23
+SELECT REGEXP_SUBSTR('C123-456-789','[^-]+',7,1) FROM DUAL;
+ 결과 = 56
+SELECT REGEXP_SUBSTR('C123-456-789','[^-]+',7,2) FROM DUAL;
+ 결과 = 789
+SELECT REGEXP_SUBSTR('C123-456-789','[-]+',1,1) FROM DUAL;
+ 결과 = -
+SELECT REGEXP_SUBSTR('C123-456-789','[-]+',1,2) FROM DUAL;
+ 결과 = -
+SELECT REGEXP_SUBSTR('C123-456-789','[-]+',1,3) FROM DUAL;
+ 결과 = NULL
+```
+## SQL 표현식 우선순위 규칙
+```
+1. 산술 연산자. ( + - / * ... )
+2. 연결 연산자. ( || ... )
+3. 비교 조건. ( < > = ... )
+4. IS [NOT] NULL, LIKE, [NOT] IN
+5. [NOT] BETWEEN
+6. NOT 논리 조건
+7. AND 논리 조건
+8. OR 논리 조건
+
+1) SELECT 1 OR 0 AND 0;
+-- 1
+2) SELECT 1 OR (0 AND 0);
+-- 1
+3) SELECT (1 OR 0) AND 0;
+-- 0
+4)
+SELECT user_id , user_mobile , user_gender , user_amount  , user_addr 
+FROM  User_Table
+WHERE user_gender  = 'male'
+OR user_amount   >= 5500
+AND user_addr  IS NULL;
+  --- > (user_amount가 5500이면서 user_addr이 null) 이거나 user_gender가 male인 데이터를 추출하겠다는 뜻. 아래 쿼리와 같은 뜻이다
+  SELECT user_id , user_mobile , user_gender , user_amount  , user_addr 
+FROM  User_Table
+WHERE user_gender  = 'male'
+OR (user_amount   >= 5500
+AND user_addr  IS NULL) ;
+```
+
 ## CUBE 함수
 ```
 SELECT A.ID, B.CODE, B.QUAN, SUM(B.QUAN)
