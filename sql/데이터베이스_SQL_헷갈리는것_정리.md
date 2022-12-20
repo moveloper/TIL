@@ -245,7 +245,7 @@ SELECT *
 FROM 주문테이블
 ORDER BY (CASE WHEN 주문상태 = '배송완료' THEN 1 ELSE 9 END ), 주문일자 ASC;
 
-주문상태 컬럼을 기준으로 배송완료이면 1순위로 거짓이면 2순위로 정렬한다. 그 이후에 주문일자순으로 오름차순으로 정렬한다. 
+주문상태 컬럼을 기준으로 배송완료이면 1순위로 거짓이면 2순위로 정렬한다. 그 이후에 주문일자순으로 오름차순으로 정렬한다. 직관적으로 이해한려고 한다면, 주문상태 컬럼에서 값이 배송완료인 값은 1로 치환하고 나머지 값은 9로 치환한 후 오름차순으로 정렬한다고 생각하면 된다. CASE WHEN 주문상태 = '배송완료' THEN '가' ELSE '나' END 로 표현한다면, 배송완료는 '가'로 치환되고 나머지는 '나'로 치환하기 때문에 1과 2로 치환한 것과 같은 결과를 보여준다.  
 ```
 ## 오라클 NULL
 1. 오라클에서 빈 문자열('')은 NULL로 인식하기 때문에, 컬럼의 값이 빈 문자열이면 NULL과 동일한 조건으로 쿼리를 작성해야 한다.
@@ -487,3 +487,50 @@ ALTER TABLE TEST_TABLE ADD PRIMARY KEY(USER_ID..)
         IF B가 NULL이 아니면
             WHERE EMPLOYEE_NAME = B
    ```
+## Join Update(조인 업데이트) 방법 (DBMS 별 구문 비교)
+
+```sql
+/*문제 : 사원테이블(emp)의 부서번호(deptno)에 해당하는 부서명(dname)을 부서테이블(dept)에서 찾아
+       사원테이블(emp)의 부서명(dname)을 갱신하시오. */
+ 
+-- Oracle --
+-- 1. SubQuery 를 이용한 Update
+UPDATE emp e
+   SET e.dname = (SELECT d.dname FROM dept d WHERE d.deptno = e.deptno)
+ WHERE EXISTS (SELECT 0 FROM dept d WHERE d.deptno = e.deptno)
+;
+-- 2. Updatable Join View 이용
+--    단, d.deptno 가 반드시 PK 이어야 함
+--    10G 까지는 PK 아니더라도 힌트로 제어 가능(/*+ bypass_ujvc */)
+UPDATE /*+ bypass_ujvc */
+       (SELECT e.dname
+             , d.dname AS dname_new
+          FROM emp  e
+             , dept d
+         WHERE d.deptno = e.deptno
+        )
+   SET dname = dname_new
+;
+-- 3. Merge
+MERGE INTO emp e
+USING dept d
+ON (d.deptno = e.deptno)
+WHEN MATCHED THEN
+UPDATE SET e.dname = d.dname
+
+-- MSSQL - From 절 사용 조인 --
+UPDATE e
+   SET e.dname = d.dname
+  FROM emp e
+ INNER JOIN dept d
+    ON d.deptno = e.deptno
+
+-- MySQL - Update 절에서 바로 조인 --
+-- SET sql_safe_updates = 0;
+UPDATE emp e
+ INNER JOIN dept d
+    ON d.deptno = e.deptno
+   SET e.dname = d.dname
+;
+
+```
