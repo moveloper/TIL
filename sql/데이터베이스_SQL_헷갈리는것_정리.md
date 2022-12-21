@@ -384,6 +384,13 @@ WHERE user_gender  = 'male'
 OR (user_amount   >= 5500
 AND user_addr  IS NULL) ;
 ```
+AND와 OR을 활용해 WHERE절에서 if-else구문처럼 활용할 수도 있다. 참고: https://lifere.tistory.com/m/entry/MSSQL-SQL%EC%9D%98-where-%EC%A0%88%EC%97%90%EC%84%9C-if%EB%AC%B8-if-else%EB%AC%B8%EC%B2%98%EB%9F%BC-%EC%82%AC%EC%9A%A9%ED%95%98%EA%B8%B0?category=435176
+
+## 그룹핑함수
+ROLLUP: https://gent.tistory.com/57
+CUBE: https://gent.tistory.com/385
+GROUPING SETS: https://gent.tistory.com/279
+GROUPING, GROUPING_ID: https://gent.tistory.com/386
 
 ## CUBE 함수
 ```
