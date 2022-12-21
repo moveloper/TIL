@@ -391,6 +391,41 @@ ROLLUP: https://gent.tistory.com/57
 CUBE: https://gent.tistory.com/385
 GROUPING SETS: https://gent.tistory.com/279
 GROUPING, GROUPING_ID: https://gent.tistory.com/386
+```SQL
+SELECT EMPNO, SAL , SUM(SAL)
+FROM EMP
+GROUP BY ROLLUP(EMPNO, SAL)
+HAVING GROUPING(EMPNO) = 1 OR GROUPING(SAL) = 0;
+
+7900	950  	950
+7369	800  	800
+7499	1600	1600
+7521	1250	1250
+7566	2975	2975
+7654	1250	1250
+7698	2850	2850
+7782	2450	2450
+7788	3000	3000
+7839	5000	5000
+7844	1500	1500
+7876	1100	1100
+7902	3000	3000
+7934	1300	1300
+NULL    NULL    29025 
+
+SELECT EMPNO, SAL, SUM(SAL), GROUPING(EMPNO), GROUPING_ID(EMPNO, SAL)
+FROM EMP
+GROUP BY CUBE(EMPNO, SAL);
+
+EMPNO	 SAL	SUM(SAL)	GROUPING(EMPNO)	GROUPING_ID(EMPNO,SAL)
+                  29025	            1	         3
+         800	   800	            1	         2
+         1100	   1100	            1	         2
+         1300	   1300	            1	         2
+         1500	   1500	            1	         2
+         1600	   1600	            1	         2
+```
+
 
 ## CUBE 함수
 ```
@@ -399,47 +434,50 @@ FROM A INNER JOIN B
 ON A.ID = B.ID
 GROUP BY CUBE(A.ID, B.CODE, (B.CODE, B.QUAN))
 ORDER BY A.ID, B.CODE, B.QUAN;
-
-ID	CODE	QUAN        SUM(B.QUAN)
-1	ELECTRO	100	100
-1	ELECTRO	100	100
-1	ELECTRO	 - 	100
-1	WATER	200	200
-1	WATER	200	200
-1	WATER	 - 	200
-1	WIND	300	300
-1	WIND	300	300
-1	WIND	 - 	300
-1	 - 	 - 	600
-2	ELECTRO	200	200
-2	ELECTRO	200	200
-2	ELECTRO	 - 	200
-2	WATER	300	300
-2	WATER	300	300
-2	WATER	 - 	300
-2	 - 	 - 	500
-3	ELECTRO	300	300
-3	ELECTRO	300	300
-3	ELECTRO	 - 	300
-3	 - 	 - 	300
- - 	ELECTRO	100	100
- - 	ELECTRO	100	100
- - 	ELECTRO	200	200
- - 	ELECTRO	200	200
- - 	ELECTRO	300	300
- - 	ELECTRO	300	300
- - 	ELECTRO	 - 	600
- - 	WATER	200	200
- - 	WATER	200	200
- - 	WATER	300	300
- - 	WATER	300	300
- - 	WATER	 - 	500
- - 	WIND	300	300
- - 	WIND	300	300
- - 	WIND	 - 	300
- - 	 - 	 - 	1400
-
 ```
+
+
+|ID	|    CODE|	     QUAN |   SUM(B.QUAN)|
+|---|---|---|---|
+|1	 |ELECTRO |   100	  | 100     |    
+|1	 |ELECTRO|   100	  | 100     | 
+|1	 |ELECTRO|    - 	  | 100     | 
+|1	 |WATER	 |   200	  | 200
+|1	 |WATER 	 |200	     | 200
+|1	 |WATER	 |    - 	  | 200
+|1	 |WIND	 |   300	  | 300
+|1	 |WIND	 |   300	  | 300
+|1	 |WIND	 |   - 	  |    300
+|1	 | - 	    |-  	     | 600
+|2	 |ELECTRO|   200	  | 200
+|2	 |ELECTRO|   200	  | 200
+|2	 |ELECTRO|    - 	  | 200
+|2	 |WATER	 |   300	  | 300
+|2	 |WATER	 |   300	  | 300
+|2	 |WATER	 |    -  	|  300
+|2	 | - 	    | - 	     |500
+|3	 |ELECTRO|   300	  | 300
+|3	 |ELECTRO|   300	  | 300
+|3	 |ELECTRO|    - 	  | 300
+|3	 | - 	    | - 	     |300
+|- |   ELECTR|   100	  | 100
+|- |   ELECTR|   100	  | 100
+|- |   ELECTR|   200	  | 200
+|- |   ELECTR|   200	  | 200
+|- |   ELECTR|   300	  | 300
+|- |   ELECTR|   300	  | 300
+|- |   ELECTR|    - 	  | 600
+|- |   WATER|      200|	   200
+|- |   WATER|      200|	   200
+|- |   WATER|      300|	   300
+|- |   WATER|      300|	   300
+|- |   WATER|       - |	   500
+|- |   WIND	 |   300	  | 300
+|- |   WIND	 |   300	  | 300
+|- |   WIND	 |    - 	  | 300
+|- |    - 	 |    - 	  | 1400
+
+
 이린식으로 쿼리가 있을 때 CUBE 함수는 모든 경우의 수를 출력하고(위에서는 2^3 = 8가지 케이스) 각각의 소계를 출력해준다고 생각하면 된다. 여기서 (B.CODE, B.QUAN)가 이해가 안되었는데, A.ID를 A, B.CODE를 B, B.QUAN을 C라고 했을 때 조합이 (A,B,(B,C)), (A,B), (B,(B,C)), ((B,C), A), (A), (B), ((B,C)), () 이다. 여기서 (A,B,(B,C)), (B,(B,C)), ((B,C), A), ((B, C))에 B가 중복되어 같은 데이터가 테이블로 출력되는 것처럼 보인다. 그러나 인간이 보기에는 같은 데이터일지는 몰라도 오라클은 B와 (B, C)를 독립적인 컬럼으로 인식하고 각각을 중복되지 않는 데이터로 인식하기 때문에 위와같이 중복되는 행들이 출력되는 것이다. 때문에 (A,<u>**B**</u>,(B,C)) 와 ((<u>**B**</u>,C), A) 총계는 중복된 것처럼 보여 두 번씩 나타나고 있고, 마찬가지로 (B,(B,C))와 ((B,C)) 총계 역시 두 번 나타나는 거슬 볼 수 있다. 같은 통계인 것처럼 보이지만 사실 각각 다른 통계를 나타내는 것이다
 
 
