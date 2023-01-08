@@ -1,5 +1,75 @@
 # SQL 헷갈리는 것들 정리
 
+[ORA-01417: A TABLE MAY BE OUTER JOINED TO AT MOST ONE OTHER TABLE (11g 버전에서)](#ora-01417-a-table-may-be-outer-joined-to-at-most-one-other-table-11g-버전에서)
+
+[3개 이상 테이블을 OUTER JOIN 할 때 ](#3개-이상-테이블을-outer-join-할-때)
+
+[SELECT한 쿼리의 결과로우 수가 매번 다르게 나오는 상황](#select한-쿼리의-결과로우-수가-매번-다르게-나오는-상황)
+
+[dbms_xplan.display_cursor 를 SQL DEVELOPER에서 사용할 때 발생했던 문제](#dbms_xplandisplay_cursor-를-sql-developer에서-사용할-때-발생했던-문제)
+
+[관계성이 없는 임시테이블끼리 조인할 때 생각해야할 것들..](#관계성이-없는-임시테이블끼리-조인할-때-생각해야할-것들)
+
+[TO_CHAR로 숫자를 변환할 때 공백이 생기는 이유와 해결방법](#to_char로-숫자를-변환할-때-공백이-생기는-이유와-해결방법)
+
+[OUTER JOIN 시 착각하기 쉬운 것](#outer-join-시-착각하기-쉬운-것)
+
+[MERGE INTO](#merge-into)
+
+[ORA-29275: partial multibyte character와 DB LINK](#ora-29275-partial-multibyte-character와-db-link)
+
+[클라이언트와 서버의 날짜/인코딩 포맷 관련](#클라이언트와-서버의-날짜인코딩-포맷-관련)
+
+[CREATE TABLE .. AS SELECT (CTAS)시 주의할점](#create-table--as-select-ctas시-주의할점)
+
+[오라클 날짜,  시간 차이 계산 방법](#오라클-날짜--시간-차이-계산-방법)
+
+[CASE문과 NULL](#case문과-null)
+
+[COUNT(*) 과 NULL](#count-과-null)
+
+[CASE 함수와 ORDER BY로 특정 값 우선정렬하기](#case-함수와-order-by로-특정-값-우선정렬하기)
+
+[오라클 NULL](#오라클-null)
+
+[NVL 함수](#nvl-함수)
+
+[VALIDATE_CONVERSION 함수 (오라클 12c R2 이상)](#validate_conversion-함수-오라클-12c-r2-이상)
+
+[INSERT INTO ... SELECT문에서 주의할 점](#insert-into--select문에서-주의할-점)
+
+[DISTINCT와 ROWNUM](#distinct와-rownum)
+
+[GROUP BY 없이 단독으로 HAVING이 오는 경우](#group-by-없이-단독으로-having이-오는-경우)
+
+[중첩 서브쿼리 사용시 몰랐던 점](#중첩-서브쿼리-사용시-몰랐던-점)
+
+[LEVEL을 WHERE절에서 활용한 쿼리](#level을-where절에서-활용한-쿼리)
+
+[REGEXP_SUBSTR 사용법](#regexp_substr-사용법)
+
+[SQL 표현식 우선순위 규칙](#sql-표현식-우선순위-규칙)
+
+[그룹핑함수](#그룹핑함수)
+
+[GROUPING SETS 함수와 ROLLUP, CUBE](#grouping-sets-함수와-rollup-cube)
+
+[pivot과 unpivot](#pivot과-unpivot)
+
+[CUBE 함수](#cube-함수)
+
+[계층형 질의](#계층형-질의)
+
+[WITH절](#with절)
+
+[PRIMARY KEY 삭제시 유의할 점](#primary-key-삭제시-유의할-점)
+
+[PRIMARY KEY 생성하는 여러가지 방법](#primary-key-생성하는-여러가지-방법)
+
+[WHERE 1=1 사용이유](#where-11-사용이유)
+
+[Join Update(조인 업데이트) 방법 (DBMS 별 구문 비교)](#join-update조인-업데이트-방법-dbms-별-구문-비교)
+
 ## ORA-01417: A TABLE MAY BE OUTER JOINED TO AT MOST ONE OTHER TABLE (11g 버전에서)
 원인: 한 테이블에 최대 OUTER JOIN은 한 개 이상이 되면 안됨
 ```
@@ -426,6 +496,29 @@ EMPNO	 SAL	SUM(SAL)	GROUPING(EMPNO)	GROUPING_ID(EMPNO,SAL)
          1600	   1600	            1	         2
 ```
 
+## GROUPING SETS 함수와 ROLLUP, CUBE
+> GROUPING SETS과 GRUOPING 함수에 대해 정리가 깔끔하게 잘되어 있다: https://gent.tistory.com/279
+
+오라클에서 소계, 합계, 총계의 쿼리(SQL)를 작성할 때는 ROLLUP을 많이 사용한다. ROLLUP의 경우 나열된 컬럼의 단계별로 소계, 합계를 자동으로 집계를 한다. 그에 반해 GROUPING SETS는 여러 그룹핑 쿼리를 UNION ALL 한 것과 같은 결과를 만들 수 있어 조금 더 유연하게 소계, 합계를 집계할 수 있다.
+
+composite column 문의 경우|  group by 문의 경우 
+---|---
+group by grouping sets(a,b,c)| group by a union all group by b union all group by c 
+group by grouping sets(a,b,(b,c))|  group by a union all group by b union all group by b,c 
+group by grouping sets((a,b,c)) | group by a,b,c
+group by grouping sets(a,(b),()) | group by a union all group by b union all group by ()
+group by grouping sets(a,rollup(b,c)) | group by a union all group by rollup(b,c)
+group by rollup(a,b,c) | group by (a,b,c) union all group by (a,b) union all group by (a) union all group by () 
+group by cube(a,b,c) | group by (a,b,c) union all group by (a,b) union all group by (a,c) union all group by (b,c) union all group by (a) union all group by (b) union all group by (c) union allgroup by ()
+---
+
+* GROUPING 함수는 해당 컬럼의 값이 NULL이면 1, 값이 있으면 0을 리턴 한다.
+
+
+## pivot과 unpivot
+> https://wookoa.tistory.com/240
+
+ 주의: 피봇은 FROM 절에 걸어준 테이블의 모든 컬럼 중 PIVOT 절에 기술한 컬럼을 제외하고 모두 GROUP BY 해버린다
 
 ## CUBE 함수
 ```
@@ -480,6 +573,32 @@ ORDER BY A.ID, B.CODE, B.QUAN;
 
 이린식으로 쿼리가 있을 때 CUBE 함수는 모든 경우의 수를 출력하고(위에서는 2^3 = 8가지 케이스) 각각의 소계를 출력해준다고 생각하면 된다. 여기서 (B.CODE, B.QUAN)가 이해가 안되었는데, A.ID를 A, B.CODE를 B, B.QUAN을 C라고 했을 때 조합이 (A,B,(B,C)), (A,B), (B,(B,C)), ((B,C), A), (A), (B), ((B,C)), () 이다. 여기서 (A,B,(B,C)), (B,(B,C)), ((B,C), A), ((B, C))에 B가 중복되어 같은 데이터가 테이블로 출력되는 것처럼 보인다. 그러나 인간이 보기에는 같은 데이터일지는 몰라도 오라클은 B와 (B, C)를 독립적인 컬럼으로 인식하고 각각을 중복되지 않는 데이터로 인식하기 때문에 위와같이 중복되는 행들이 출력되는 것이다. 때문에 (A,<u>**B**</u>,(B,C)) 와 ((<u>**B**</u>,C), A) 총계는 중복된 것처럼 보여 두 번씩 나타나고 있고, 마찬가지로 (B,(B,C))와 ((B,C)) 총계 역시 두 번 나타나는 거슬 볼 수 있다. 같은 통계인 것처럼 보이지만 사실 각각 다른 통계를 나타내는 것이다
 
+
+## 계층형 질의
+* START WITH절을 통해 지정된 계층구조가 전개될 시작 데이터를 파악한다.
+* PRIOR 사원 = 매니저(이전 레벨의 사원값을 매니저값으로 가지고 있는, 부모->자식 순방향 전개)  
+PRIOR 매니저 = 사원(이전 레벨의 매니저값을 사원값으로 가지고 있는, 자식->부모 역방향 전개)
+* PRIOR은 SELECT, WHERE절에서도 사용가능하다. *그냥 PRIOR 키워드를 이전에 참조하고 있는 데이터행이라고 치환해서 생각해버리자.*
+* 조건이 어느 절에 기재되어 있느냐에 따라
+  * CONNECT BY 절에 작성된 조건: START WITH 절에서 필터링된 시작데이터는 결과목록에 포함되며, 이후 하위데이터도 전개되지만 조건을 충족하지 않는 하위 데이터는 결과에서 제외된다. 
+  * PRIOR 조건에 추가된 조건: START WITH 절에서 필터링된 시작데이터는 결과목록에 포함되며, <u>*PRIOR조건을 모두 만족하는 경우에만 하위데이터가 전개된다*</u>. PRIOR조건을 모두 만족시키지 않는 경우 하위데이터 자체가 전개 안됨
+* WHERE절에 작성된 조건: 계층구조를 모두 전개한 후 조건을 충족하는 데이터만 결과목록에 출력된다.
+ 
+reference)  
+https://valuableinfo.tistory.com/entry/%EC%98%A4%EB%9D%BC%ED%81%B4-%EA%B3%84%EC%B8%B5%EC%BF%BC%EB%A6%AC-%EB%91%90%EB%B2%88%EC%A7%B8-CONNECT-BY-PRIOR
+
+
+## WITH절 
+WITH절은 복잡한 SQL에서 동일 블록에 대해 반복적으로 SQL문을 사용하는 경우 그 블록에 이름을 부여하여 재사용 할 수 있게 함으로서 쿼리 성능을 높일 수 있는데 WITH절을 이용하여 미리 이름을 부여해서 Query Block을 만들 수 있다. 자주 실행되는 경우 한번만 Parsing되고 Plan 계획이 수립되므로 쿼리의 성능향상에 도움이 된다.
+```sql
+WITH EXAMPLE AS
+(
+ SELECT 'WITH절' AS STR1
+ FROM DUAL
+)
+
+SELECT * FROM EXAMPLE
+```
 
 ## PRIMARY KEY 삭제시 유의할 점
 ALTER TABLE 테이블명 DROP PRIMARY KEY; 구문을 사용할 때 주의할 점이 있다. PRIMARY KEY를 생성하는 방법에 따라 제약조건과 인덱스 모두가 삭제 될 때가 있고, 제약조건만 삭제되고 인덱스는 그대로 남아 있는 경우가 발생하기도 한다. PRIMARY KEY를 생성할 때 인덱스와 제약조건을 동시에 생성하면 삭제할 때도 동시에 삭제가 되고, 이미 생성된 인덱스를 사용해서 PRIMARY KEY를 생성하면, 위 구문 수행시 제약조건만 삭제가 되고 인덱스는 남아있는다.    
