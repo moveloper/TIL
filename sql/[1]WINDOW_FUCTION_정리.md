@@ -134,3 +134,5 @@ YYYYMM           AMT   AMT_PRE3   AMT_FOL3
 ```
 
 > 출처: http://www.gurubee.net/lecture/2674
+
+> 더 많은 예시: https://tiboy.tistory.com/570
