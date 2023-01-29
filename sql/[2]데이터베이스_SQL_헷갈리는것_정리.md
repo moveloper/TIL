@@ -310,6 +310,7 @@ NULL = NULL은 FALSE
 ```
 COUNT(컬럼명)을 사용하면 NULL값은 제외하고 COUNT 한다.  
 COUNT(*)을 사용하면 NULL도 포함하여 전부 COUNT 한다.
+추가) COUNT(DISTINCT 컬럼명)은 해당 컬럼에서 중복된 데이터를 제거하고 개수를 세어 결과를 출력한다 
 ```
 ## CASE 함수와 ORDER BY로 특정 값 우선정렬하기 
 ```
