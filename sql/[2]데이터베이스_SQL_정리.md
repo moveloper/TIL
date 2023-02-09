@@ -72,6 +72,8 @@
 
 [PL/SQL 코드 생성과 실행](#plsql-코드-생성과-실행)
 
+[dbms_xmlgen 패키지를 활용하기](#dbms_xmlgen 패키지를 활용하기)
+
 ## ORA-01417: A TABLE MAY BE OUTER JOINED TO AT MOST ONE OTHER TABLE (11g 버전에서)
 원인: 한 테이블에 최대 OUTER JOIN은 한 개 이상이 되면 안됨
 ```
@@ -775,4 +777,36 @@ SQL>SET AUTOCOMMIT OFF[ON]
 ```
 연결된 상태로 데이터베이스와의 연결을 끊고 싶은 경우
 SQL>DISCONNECT
+```
+
+## dbms_xmlgen 패키지를 활용하기
+dbms_xmlgen.getxmltype은 SQL을 입력받고 그 결과를 XMLTYPE으로 반환하는 함수이다. exatract는 XML 타입으로부터 값을 추출하는 함수이다. '//text()'는 XML의 태그를 제외한 값을 모두 추출한다. 
+'//text()' 와 같이 표기하는 것을 'XPATH'라고 하는데, 아래 블로그에 잘 정리되어 있다. https://engineer-mole.tistory.com/162 
+```sql
+SELECT table_name
+     , num_rows
+     , TO_NUMBER(
+       dbms_xmlgen.getxmltype('SELECT COUNT(*) c FROM ' || table_name).Extract('//text()')
+       ) num_rows2 -- 실제측정 건수
+  FROM dba_tables
+;
+
+/* dbms_xmlgen.getxmltype('SELECT COUNT(*) c FROM ' || TABLE_NAME) 의 결과값은 아래와 같다.
+<ROWSET>
+ <ROW>
+  <C>2993</C>
+ </ROW>
+</ROWSET>
+
+EXTRACT('//C/text()') = EXTRACT('//text()')
+
+ XPath는 "//"를 이용하여 노드 패스를 생략할 수 있다. "//"는 descendant-or-self의 생략형이다. 즉 기점이 되는 노드의 모든 자식들의 집합을 일컫는다. 
+
+SELECT  dbms_xmlgen.getxmltype('SELECT * FROM SCOTT.EMP').EXTRACT('//text()') FROM DUAL; 
+
+결과는 루트노드의 모든 자식 집합들 중 텍스트 값만 추출한 것이다. 
+7369SMITHCLERK79021980/12/17800207499ALLENSALESMAN76981981/02/201600300307521WARDSALESMAN76981981/02/221250500307566JONESMANAGER78391981/04/022975207654MARTINSALESMAN76981981/09/2812501400307698BLAKEMANAGER78391981/05/012850307782CLARKMANAGER78391981/06/092450107788SCOTTANALYST75661987/04/193000207839KINGPRESIDENT1981/11/175000107844TURNERSALESMAN76981981/09/0815000307876ADAMSCLERK77881987/05/231100207900JAMESCLERK76981981/12/03950307902FORDANALYST75661981/12/033000207934MILLERCLERK77821982/01/23130010
+
+*/
+
 ```
