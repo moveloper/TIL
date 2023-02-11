@@ -1,4 +1,4 @@
-# SQL 헷갈리는 것들 정리
+# 데이터베이스 SQL 정리
 
 [ORA-01417: A TABLE MAY BE OUTER JOINED TO AT MOST ONE OTHER TABLE (11g 버전에서)](#ora-01417-a-table-may-be-outer-joined-to-at-most-one-other-table-11g-버전에서)
 
@@ -70,9 +70,9 @@
 
 [Join Update(조인 업데이트) 방법 (DBMS 별 구문 비교)](#join-update조인-업데이트-방법-dbms-별-구문-비교)
 
-[PL/SQL 코드 생성과 실행](#plsql-코드-생성과-실행)
+[dbms_xmlgen 패키지를 활용하기](#dbms_xmlgen-패키지를-활용하기)
 
-[dbms_xmlgen 패키지를 활용하기](#dbms_xmlgen 패키지를 활용하기)
+[cross join할 때 조인하려는 테이블에 데이터가 없을 경우](#cross-join할-때-조인하려는-테이블에-데이터가-없을-경우)
 
 ## ORA-01417: A TABLE MAY BE OUTER JOINED TO AT MOST ONE OTHER TABLE (11g 버전에서)
 원인: 한 테이블에 최대 OUTER JOIN은 한 개 이상이 되면 안됨
@@ -704,81 +704,6 @@ UPDATE emp e
 
 ```
 
-## PL/SQL 코드 생성과 실행
-
-PL/SQL 문 입력이 끝났음을 SQL *Plus 에 알리기 위해, 마지막에 슬래시(/) 를 입력해야 한다.
-대개 피해를 주진 않지만, 슬래시는 중요한 특징이 몇 가지 있다.
-1. 슬래시는 SQL 이든 PL/SQL  이든 상관없이 "가장 최근에 입력된 문장을 실행하라" 는 뜻이다.
-2. SQL*Plus  에서 슬래시는 유일한 명령어로서, PL/SQL 이나 SQL 의 일부분이 아니다.
-3. 슬래시 자체가 한 행에 나와야 한다
-4. 오라클 9i 하위버전의 SQL*Plus 에서 공백을 슬래시 앞에 입력하면 작동하지 않는다.
-```
-SQL*Plus의 PL/SQL 사용자는 EXECUTE 명령어를 사용하면
-BEGIN , END, 마지막에 붙이는 슬래시를 입력하지 않아도 된다.
-
-원문 SQL >
-BEGIN
-DBMS_OUTPUT.PUT_LINE('hey look')
-END;
-/
-
-SQL > EXECUTE DBMS_OUTPUT.PUT_LNE('hey look')
-
-EXECUTE 는 축약될 수 있고, 대소문자를 가리지 않기 때문에, 다음처럼 사용 할 수 있다.
-
-SQL > exec dbms_output.put_line('hey look')
-```
-### 스크립트 실행
-스크립트 파일명을 알고 있다면 '@' 명령어를 사용하는 것이 스크립트를 실행하는 가장 손쉬운 방법이다. '@' 명령어는 sqlplus를 실행시킨 디렉토리가 기준이다.
-```
-SQL> @파일이름.확장자명
-
-SQL> START 파일이름.확장자명
-@ = START 의 실행결과는 동일하다.
-
-스크립트 파일이 다른 디렉토리에 있으면 파일명을 경로와 함께 쓰면 된다.
-SQL> @/파일경로A/파일경로B/파일이름.확장자명
-
-@@ - 현재 실행되는 파일의 디렉토리에서 상대적으로 파일을 찾아라
-
-SQLPLUS try to do @script at current location/directory. But @@script at the same directory of main SQL script. 
--------------------------------------
-### main.sql ###
-#location: /home/sqlplus
-@file1
-@@file1
--------------------------------------
-### file1.sql ###
-#location: /home
--------------------------------------
-### file1.sql ###
-#location: /home/sqlplus
--------------------------------------
-
-#When I DOING script at /home
-sqlplus -s system/manager @/home/sqlplus/main.sql
-@file1 => /home/file1.sql (current directory)
-@@file1 => /home/sqlplus/file1.sql (same with main.sql)
-```
-
-### 세션 SET값 조회 
-```
-SQL> SHOW ALL
-```
-
-### AUTOCOMMIT
-```
-기본값을 AUTOCOMMIT ON 으로 ,
-ON - 커밋되지 않은 변경사항을 커밋한다.
-OFF - 커빗되지 않은 변경사항을 롤백 한다.
-SQL>SET AUTOCOMMIT OFF[ON]
-```
-### DISCONNECT
-```
-연결된 상태로 데이터베이스와의 연결을 끊고 싶은 경우
-SQL>DISCONNECT
-```
-
 ## dbms_xmlgen 패키지를 활용하기
 dbms_xmlgen.getxmltype은 SQL을 입력받고 그 결과를 XMLTYPE으로 반환하는 함수이다. exatract는 XML 타입으로부터 값을 추출하는 함수이다. '//text()'는 XML의 태그를 제외한 값을 모두 추출한다. 
 '//text()' 와 같이 표기하는 것을 'XPATH'라고 하는데, 아래 블로그에 잘 정리되어 있다. https://engineer-mole.tistory.com/162 
@@ -810,3 +735,6 @@ SELECT  dbms_xmlgen.getxmltype('SELECT * FROM SCOTT.EMP').EXTRACT('//text()') FR
 */
 
 ```
+
+## cross join할 때 조인하려는 테이블에 데이터가 없을 경우
+inner join할 때 조인하는 테이블에 데이터가 없을 경우 결과는 출력되지 않는다. outer join일 경우는 조인을 시도하는 테이블의 데이터 수만큼 출력한다. cross join의 경우, 조인하려는 테이블에 데이터가 0건일 경우 조인을 시도하는 테이블의 데이터도 출력되지 않는다. 실무에서 이와 관련되서 당황했던 경험이 있어서 기록한다. 기존 코드에서 cross join 인데 oracle sql을 사용해 cross join인지 눈치채지 못한 상황이었고, 심지어 cross join의 대상이 되는 테이블에 where절에서 (+)기호를 사용해 마치 조인 조건처럼 적어둔 경우가 있엇다. 그래서 처음에는 outer join인 줄 알았다. 조인조건 없이 cross join하는 테이블에 (+)를 사용한 것은 outer join과 cross join을 동시에 하겠다는 모순된 상황이다.  
