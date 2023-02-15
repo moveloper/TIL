@@ -48,6 +48,8 @@
 
 [REGEXP_SUBSTR 사용법](#regexp_substr-사용법)
 
+[정규표현식](#정규표현식)
+
 [SQL 표현식 우선순위 규칙](#sql-표현식-우선순위-규칙)
 
 [그룹핑함수](#그룹핑함수)
@@ -73,6 +75,8 @@
 [dbms_xmlgen 패키지를 활용하기](#dbms_xmlgen-패키지를-활용하기)
 
 [cross join할 때 조인하려는 테이블에 데이터가 없을 경우](#cross-join할-때-조인하려는-테이블에-데이터가-없을-경우)
+
+[LISTAGG(여러 행을 하나의 컬럼으로 만들기) 활용하기](#listagg여러-행을-하나의-컬럼으로-만들기-활용하기)
 
 ## ORA-01417: A TABLE MAY BE OUTER JOINED TO AT MOST ONE OTHER TABLE (11g 버전에서)
 원인: 한 테이블에 최대 OUTER JOIN은 한 개 이상이 되면 안됨
@@ -405,6 +409,7 @@ REG_EXP
   대괄호 [] 안의 ^ 는  NOT의 의미를 나타냄
   ^ 문자가 대괄호 밖에서 사용되면 문자열의 시작을 의미함
   + 는 문자패턴이 1개이상 연결될 때를 나타냄, 위 예제에서 01,03등 2개이상 나타내기 위함
+  
 START_INDEX
   검색의 시작지점 
 GROUP INDEX
@@ -429,6 +434,11 @@ SELECT REGEXP_SUBSTR('C123-456-789','[-]+',1,2) FROM DUAL;
 SELECT REGEXP_SUBSTR('C123-456-789','[-]+',1,3) FROM DUAL;
  결과 = NULL
 ```
+
+## 정규표현식 
+정리: https://gent.tistory.com/546
+  - 추가: [역참조에 대한 개념] http://minsone.github.io/regex/regexp-backreference
+
 ## SQL 표현식 우선순위 규칙
 ```
 1. 산술 연산자. ( + - / * ... )
@@ -738,3 +748,40 @@ SELECT  dbms_xmlgen.getxmltype('SELECT * FROM SCOTT.EMP').EXTRACT('//text()') FR
 
 ## cross join할 때 조인하려는 테이블에 데이터가 없을 경우
 inner join할 때 조인하는 테이블에 데이터가 없을 경우 결과는 출력되지 않는다. outer join일 경우는 조인을 시도하는 테이블의 데이터 수만큼 출력한다. cross join의 경우, 조인하려는 테이블에 데이터가 0건일 경우 조인을 시도하는 테이블의 데이터도 출력되지 않는다. 실무에서 이와 관련되서 당황했던 경험이 있어서 기록한다. 기존 코드에서 cross join 인데 oracle sql을 사용해 cross join인지 눈치채지 못한 상황이었고, 심지어 cross join의 대상이 되는 테이블에 where절에서 (+)기호를 사용해 마치 조인 조건처럼 적어둔 경우가 있엇다. 그래서 처음에는 outer join인 줄 알았다. 조인조건 없이 cross join하는 테이블에 (+)를 사용한 것은 outer join과 cross join을 동시에 하겠다는 모순된 상황이다.  
+
+
+## LISTAGG(여러 행을 하나의 컬럼으로 만들기) 활용하기
+
+```SQL
+-- 아래는 같은 결과
+SELECT DISTINCT LISTAGG(대상컬럼명, 구분자) WITHIN GROUP (ORDER BY 정렬기준컬럼) 
+       OVER (PARTITION BY 구분하고자 하는 대상컬럼) AS LIST_NAME
+  FROM 테이블명; -- DISTINCT가 없으면 테이블의 로우 수만큼 결과가 출력됨
+
+SELECT 구분하고자 하는 대상 컬럼
+     , LISTAGG(대상컬럼명, 구분자) WITHIN GROUP (ORDER BY 정렬기준컬럼) 
+FROM 테이블명 
+GROUP BY 구분하고자 하는 대상 컬럼
+
+-- 정규표현식을 활용한 중복제거 
+SELECT DISTINCT DEPT,
+       REGEXP_REPLACE(LISTAGG(USER_NAME, ',') WITHIN GROUP (ORDER BY ORDER_NUMBER ASC)
+       OVER (PARTITION BY DEPT),'([^,]+)(,\1)+', '\1') AS USER_NAME
+  FROM TEST_TABLE
+
+-- 테스트 쿼리 
+WITH TEST_TABLE AS (
+SELECT '인사부' AS DEPT, '홍길동' AS USER_NAME, 2 AS ORDER_NUMBER FROM DUAL
+UNION ALL
+SELECT '인사부' AS DEPT, '김길동' AS USER_NAME, 1 AS ORDER_NUMBER FROM DUAL
+UNION ALL
+SELECT '인사부' AS DEPT, '김길동' AS USER_NAME, 1 AS ORDER_NUMBER FROM DUAL
+UNION ALL
+SELECT '감사부' AS DEPT, '이길동' AS USER_NAME, 3 AS ORDER_NUMBER FROM DUAL)
+SELECT DISTINCT DEPT,
+       REGEXP_REPLACE(LISTAGG(USER_NAME, ',') WITHIN GROUP (ORDER BY ORDER_NUMBER ASC)
+       OVER (PARTITION BY DEPT),'([^,]+)(,\1)+', '\1') AS USER_NAME
+  FROM TEST_TABLE
+
+-- 출처: https://too612.tistory.com/501
+```
