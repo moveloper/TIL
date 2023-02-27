@@ -4,6 +4,8 @@
 
 [3개 이상 테이블을 OUTER JOIN 할 때 ](#3개-이상-테이블을-outer-join-할-때)
 
+[ORDER BY 절이 사용되지 않는 SELECT 쿼리(MySQL)](#order-by-절이-사용되지-않는-select-쿼리mysql)
+
 [SELECT한 쿼리의 결과로우 수가 매번 다르게 나오는 상황](#select한-쿼리의-결과로우-수가-매번-다르게-나오는-상황)
 
 [dbms_xplan.display_cursor 를 SQL DEVELOPER에서 사용할 때 발생했던 문제](#dbms_xplandisplay_cursor-를-sql-developer에서-사용할-때-발생했던-문제)
@@ -145,31 +147,31 @@ WHERE A.NO = B.NO(+)
 ## 3개 이상 테이블을 OUTER JOIN 할 때 
 ```
 WITH TAB1 AS(
-SELECT '1' COL1, '1' CO2 FROM DUAL
+SELECT '1' COL1, '1' COL2 FROM DUAL
 UNION ALL
-SELECT '2' COL1, '2' CO2 FROM DUAL
+SELECT '2' COL1, '2' COL2 FROM DUAL
 UNION ALL
-SELECT '3' COL1, '3' CO2 FROM DUAL
+SELECT '3' COL1, '3' COL2 FROM DUAL
 )
 ,
 TAB2 AS (
-SELECT '1' COL1, '1' CO2 FROM DUAL
+SELECT '1' COL1, '1' COL2 FROM DUAL
 UNION ALL
-SELECT '1' COL1, '1' CO2 FROM DUAL
+SELECT '1' COL1, '1' COL2 FROM DUAL
 UNION ALL
-SELECT '1' COL1, '1' CO2 FROM DUAL
+SELECT '1' COL1, '1' COL2 FROM DUAL
 UNION ALL
-SELECT '2' COL1, '2' CO2 FROM DUAL
+SELECT '2' COL1, '2' COL2 FROM DUAL
 UNION ALL
-SELECT '2' COL1, '2' CO2 FROM DUAL
+SELECT '2' COL1, '2' COL2 FROM DUAL
 UNION ALL
-SELECT '3' COL1, '3' CO2 FROM DUAL
+SELECT '2' COL1, '2' COL2 FROM DUAL
 )
 ,
 TAB3 AS(
-SELECT '3' COL1, '3' CO2 FROM DUAL
+SELECT '2' COL1, '2' COL2 FROM DUAL
 UNION ALL
-SELECT '3' COL1, '3' CO2 FROM DUAL
+SELECT '3' COL1, '3' COL2 FROM DUAL
 )
 
 1)
@@ -180,13 +182,13 @@ FROM TAB1 A
 WHERE A.COL1 = B.COL1(+)
   AND A.COL1 = C.COL1(+)
 
-1	1	1	1		
-1	1	1	1		
-1	1	1	1		
-2	2	2	2		
-2	2	2	2		
-3	3	3	3	3	3
-3	3	3	3	3	3
+1	1	1	1	- -	
+1	1	1	1	- -
+1	1	1	1	- -
+2	2	2	2	2	2
+2	2	2	2	2	2
+2	2	2	2	2	2
+3	3	- -	3	3
 
 2)
 SELECT *
@@ -196,17 +198,44 @@ FROM TAB1 A
 WHERE A.COL1 = B.COL1(+)
   AND B.COL1 = C.COL1(+)
 
-3	3	3	3	3	3
-3	3	3	3	3	3
-1	1	1	1		
-1	1	1	1		
-1	1	1	1		
-2	2	2	2		
-2	2	2	2		  
+2	2	2	2	2	2
+2	2	2	2	2	2
+2	2	2	2	2	2
+3	3	- - - -
+1	1	1	1	- -
+1	1	1	1	- -
+1	1	1	1	- -
+
+3) 
+SELECT *
+FROM TAB1 A
+   , TAB2 B
+   , TAB3 C
+WHERE A.COL1 = B.COL1(+)
+  AND B.COL1 = C.COL1
+
+2	2	2	2	2	2
+2	2	2	2	2	2
+2	2	2	2	2	2
 
 1번 쿼리는 TAB1을 TAB2와 조인한 결과테이블에서 TAB1 기준으로 다시 TAB3과 조인하여 결과를 가져온다.   
 2번 쿼리는 TAB1을 TAB2와 조인한 결과테이블에서 TAB2 기준으로 다시 TAB3과 조인하여 결과를 가져온다.  
+3번 쿼리는 오라클에서 TAB2와 TAB3를 먼저 조인하고 그 결과테이블에서 TAB1과 조인하여 결과를 가져온다.  
 ```
+
+## ORDER BY 절이 사용되지 않는 SELECT 쿼리(MySQL) 
+```
+ORDER BY 절이 사용되지 않는 SELECT 쿼리의 결과의 정렬순서는 다음과 같다.
+
+- 인덱스를 사용한 SELECT의 경우에는 인덱스의 정렬된 순서대로 레코드를 가져온다.
+
+- 인덱스를 사용하지 못하고 풀 테이블 스캔을 실행하는 SELECT의 경우, MyISAM은 테이블 저장된 순서대로 가져오는데, 순서가 INSERT 순서를 이믜하는 것은 아니다. 레코드가 삭제되면서 빈 공간이 생기면 INSERT 되는 레코드는 항상 테이블의 마지막이 아니라 빈 공간 이있으면 빈 공간에 저장되기 때문이다. InnoDB의 경우 항상 프라이머리 키로 클러스터링 돼어 있기 때문에 풀 테이블 스캔의 경우 기본적으로 프라이머리 키 순서대로 레코드를 가져온다.
+
+- SELECT 쿼리가 임시 테이블을 거쳐서 처리되면 조회되는 레코드의 순서는 예측하기는 어렵다. 
+ORDER BY 절이 없는 SELECT 쿼리 결과의 순서는 처리 절차에 따라 달라질 수 있다. 어떤 DBMS도 ORDER BY 절이 명시되지 않은 쿼리에 대해서는 어떠한 정렬도 보장하지 않는다. 
+ORDER BY에서 인덱스를 사용하지 못할 대는 추가적인 정렬 작업을 수행하고, 쿼리 실행 계획이 있는 Extra 컬럼에 Using filesort 라는 코멘트가 표시된다. Filesort라는 단어에 포함된 File은 디스크의 파일을 이용해 정렬을 수행한다는 의미가 아니라 쿼리를 수행하는 도중에 MySQL 서버가 퀵 소트 정렬 알고리즘을 수행했다는 의미 정도로 이해하면 된다. 정렬 대상이 많은 경우 여러 부분으로 나눠서 처리하는데, 정렬된 결과를 임시로 디스크나 메모리에 저장해둔다. 실제로 메모리만 이용해 정렬이 수행됐는지 디스크의 파일을 이용했는지는 알 수 없다.
+```
+
 
 ## SELECT한 쿼리의 결과로우 수가 매번 다르게 나오는 상황 
 - 원인: FROM 절의 인라인 뷰에서 ROW_NUMBER() OVER (PARTITION BY 컬럼명 ORDER BY 컬럼명)을 사용하고 ROWNUM = 1 조건으로 데이터를 가져왔는데, ORDER BY 절에 같은 값이 많아 순서가 일정하지 않은 결과를 가져오게 되었다. 결과값이 일정하지 않다보니 이 인라인뷰와 조인할 때마다 조인에 성공하는 로우수가 달랐던 것이다.
