@@ -32,6 +32,8 @@
 
 [CASE 함수와 ORDER BY로 특정 값 우선정렬하기](#case-함수와-order-by로-특정-값-우선정렬하기)
 
+[Why DECODE can only be used in sql statement](#why-decode-can-only-be-used-in-sql-statement) 
+
 [오라클 NULL](#오라클-null)
 
 [NVL 함수](#nvl-함수)
@@ -51,6 +53,8 @@
 [REGEXP_SUBSTR 사용법](#regexp_substr-사용법)
 
 [정규표현식](#정규표현식)
+
+[오라클에 엔터(줄바꿈) 입력 및 제거](#오라클에-엔터줄바꿈-입력-및-제거)
 
 [SQL 표현식 우선순위 규칙](#sql-표현식-우선순위-규칙)
 
@@ -355,6 +359,29 @@ ORDER BY (CASE WHEN 주문상태 = '배송완료' THEN 1 ELSE 9 END ), 주문일
 
 주문상태 컬럼을 기준으로 배송완료이면 1순위로 거짓이면 2순위로 정렬한다. 그 이후에 주문일자순으로 오름차순으로 정렬한다. 직관적으로 이해한려고 한다면, 주문상태 컬럼에서 값이 배송완료인 값은 1로 치환하고 나머지 값은 9로 치환한 후 오름차순으로 정렬한다고 생각하면 된다. CASE WHEN 주문상태 = '배송완료' THEN '가' ELSE '나' END 로 표현한다면, 배송완료는 '가'로 치환되고 나머지는 '나'로 치환하기 때문에 1과 2로 치환한 것과 같은 결과를 보여준다.  
 ```
+
+## Why DECODE can only be used in sql statement
+decode was implemented by Oracle to allow "if then else" type determination inside SQL statements.
+
+it wasn't needed in PL because PL already had IF THEN ELSE as part of the language.
+
+Since then CASE has become an ANSI standard for SQL, so CASE is now implemented in both SQL and PL.
+
+That's just the way it is.
+```sql
+declare
+x pls_integer;
+A pls_integer :=0;
+begin
+  x := case A when 0 then 0 else 1 end; -- work
+  x := decode (A,0,0,1) ; -- doesn't work
+  dbms_output.put_line(x);
+end;
+```
+
+
+
+
 ## 오라클 NULL
 1. 오라클에서 빈 문자열('')은 NULL로 인식하기 때문에, 컬럼의 값이 빈 문자열이면 NULL과 동일한 조건으로 쿼리를 작성해야 한다.
 반면 MySQL이나 SQLserver에서는 빈 문자열이 그대로 입력된다.
@@ -393,6 +420,16 @@ SELECT '1번' AS PK1
 -- 결과 
 PK1 PK2 PK3
 3번 1번 2번 
+
+3. 테이블에 default 값이 설정되어 있다고 생략하면 안된다. 
+INSERT INTO TEST_TAB 
+SELECT '1' 
+     , '2'
+  FROM DUAL ;
+-- 결과
+ORA-00947: 값의 수가 충분하지 않습니다  
+
+참조: https://stackoverflow.com/questions/29421094/insert-into-using-a-query-and-add-a-default-value 
 ```
 
 ## DISTINCT와 ROWNUM
@@ -467,6 +504,32 @@ SELECT REGEXP_SUBSTR('C123-456-789','[-]+',1,3) FROM DUAL;
 ## 정규표현식 
 정리: https://gent.tistory.com/546
   - 추가: [역참조에 대한 개념] http://minsone.github.io/regex/regexp-backreference
+
+## 오라클에 엔터(줄바꿈) 입력 및 제거
+```
+오라클에 데이터를 넣을 때, 다양한 데이터가 들어갈 수 있지만 textarea와 같은 곳에 들어간 내용은 줄바꿈이 필요할 경우가 있다.
+
+기본적으로 개행을 삽입하기 위해서 아래와 같이 표현할 수 있다.
+
+UPDATE 테이블 명
+SET '안녕'||CHR(13)||CHR(10)||'하세요'
+WHERE 조건
+
+결과값 : 
+안녕
+하세요
+
+*) CHR()은 숫자를 아스키코드로 변환해주는 함수이며,
+CHR(13) : carriage return(캐리지 리턴) > 현재 라인의 첫 번째 자리에 커서를 위치
+CHR(10) : new line(라인 피트) > 커서 위치를 아래쪽으로 이동
+각각 위와 같은 의미를 가지고 있으므로 현재 라인 첫번째 자리에서 아래로 커서가 이동하여 '\n'과 같은 줄바꿈을 확인할 수 있다.
+
+반대로 개행을 제거하기 위해서는 아래와 같이 replace를 이용하여 처리할 수 있다.
+replace(컬럼명, CHR(13) || CHR(10), '')
+replace(replace(컬럼명, CHR(10), ''), CHR(13), '')
+
+출처: https://highello.tistory.com/m/20 
+```
 
 ## SQL 표현식 우선순위 규칙
 ```
