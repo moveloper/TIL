@@ -502,7 +502,10 @@ SELECT REGEXP_SUBSTR('C123-456-789','[-]+',1,3) FROM DUAL;
 ```
 
 ## 정규표현식 
-정리: https://gent.tistory.com/546
+정리된 블로그:   
+https://gent.tistory.com/546  
+https://hamait.tistory.com/m/342  
+
   - 추가: [역참조에 대한 개념] http://minsone.github.io/regex/regexp-backreference
 
 ## 오라클에 엔터(줄바꿈) 입력 및 제거
