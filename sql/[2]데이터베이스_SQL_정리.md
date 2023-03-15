@@ -14,7 +14,7 @@
 
 [TO_CHAR로 숫자를 변환할 때 공백이 생기는 이유와 해결방법](#to_char로-숫자를-변환할-때-공백이-생기는-이유와-해결방법)
 
-[OUTER JOIN 시 착각하기 쉬운 것](#outer-join-시-착각하기-쉬운-것)
+[OUTER JOIN 시 착각하기 쉬운 것 2가지](#outer-join-시-착각하기-쉬운-것)
 
 [MERGE INTO](#merge-into)
 
@@ -281,7 +281,21 @@ SELECT TRIM(TO_CHAR(999, '000')) FROM DUAL; -- 결과 TRIM(' 999')
 또 하나 주의할 점은 NUMBER타입을 CHAR타입 컬럼에 INSERT 할 때도 공백이 생기는 것이다. 예를 들면 CHAR(10) 컬럼에 숫자 3을 INESRT하면 '3         '로 자동 형변환이 되어 의도하지 않은 결과를 가져온다. 반면 VARCHAR(10) 컬럼럼에 INSERT하면 사용한 데이터 크기 만큼만 차지하므로 '3'으로 INSERT 된다. 
 
 ## OUTER JOIN 시 착각하기 쉬운 것
-OUTER JOIN을 하게되면 뭔가 DRIVING TABLE의 ROW 수가 100건이면 100건의 결과만 나와야 될 것 같은 착각을 했다. <u>LEFT OUTER JOIN을 기준으로 1:M의 관계인 경우, 결과 집합의 내용은 LEFT 기준이지만 결과집합의 건수는 RIGHT가 기준이다</u>. 즉 내용은 DRIVING TALBE의 100건에 해당하는 내용이 모두 존재하고, 만약 DRIVEN TABLE에 여러 행이 조건에 일치한다면 100 + a 의 결과 건수가 되는 것이다. INNER JOIN 시에는 건수에 신경안쓰다가, OUTER JOIN 시에 왠지 건수가 기준 테이블 건수와 같아야 된다는 잘못된 생각을 했다.  
+1. OUTER JOIN을 하게되면 뭔가 DRIVING TABLE의 ROW 수가 100건이면 100건의 결과만 나와야 될 것 같은 착각을 했다. <u>LEFT OUTER JOIN을 기준으로 1:M의 관계인 경우, 결과 집합의 내용은 LEFT 기준이지만 결과집합의 건수는 RIGHT가 기준이다</u>. 즉 내용은 DRIVING TALBE의 100건에 해당하는 내용이 모두 존재하고, 만약 DRIVEN TABLE에 여러 행이 조건에 일치한다면 100 + a 의 결과 건수가 되는 것이다. INNER JOIN 시에는 건수에 신경안쓰다가, OUTER JOIN 시에 왠지 건수가 기준 테이블 건수와 같아야 된다는 잘못된 생각을 했다. 
+2. WHERE 절의 조인 조건에 아래와 같은 구문이 있었다 
+   ```sql
+    FROM TABLE1 A
+       , TABLE2 B
+   WHERE A.COL1 = B.COL1(+)
+     AND NVL(A.COL2, 'X') = NVL(B.COL2(+), 'X');
+
+   -- ANSI로 
+    FROM TABLE1 A
+    LEFT JOIN TABLE2 B
+      ON A.COL1 = B.COL1
+     AND NVL(A.COL2, 'X') = NVL(B.COL2, 'X');   
+   ```
+   처음에 볼 때는 '아우터 조인한 결과가 NULL일 때 'X'로 비교하는건가?'하고 헷갈렸는데 조인에 대한 이해가 모자라서였다. ANSI로 풀었을 때 비로소 이해가 되었다. 테이블 A와 테이블 B가 아우터 조인하는데, 그 조인 컬럼으로 A.COL1과 B.COL1의 일치여부와 A.COL2와 B.COL2의 일치여부를 기준으로 한다. 다만, A.COL2와 B.COL2가 NULL이라면 'X'로 값을 치환한 뒤에 조인을 실시한다.    
 
 ## MERGE INTO 
 https://gent.tistory.com/406
