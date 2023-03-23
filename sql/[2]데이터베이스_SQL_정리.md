@@ -393,9 +393,6 @@ begin
 end;
 ```
 
-
-
-
 ## 오라클 NULL
 1. 오라클에서 빈 문자열('')은 NULL로 인식하기 때문에, 컬럼의 값이 빈 문자열이면 NULL과 동일한 조건으로 쿼리를 작성해야 한다.
 반면 MySQL이나 SQLserver에서는 빈 문자열이 그대로 입력된다.
@@ -642,7 +639,11 @@ group by cube(a,b,c) | group by (a,b,c) union all group by (a,b) union all group
 ## pivot과 unpivot
 > https://wookoa.tistory.com/240
 
- 주의: 피봇은 FROM 절에 걸어준 테이블의 모든 컬럼 중 PIVOT 절에 기술한 컬럼을 제외하고 모두 GROUP BY 해버린다
+쉽게 생각하면  
+피봇: 로우를 컬럼으로  --> 그룹함수 / FOR 그룹핑할 컬럼 / IN 그룹핑한 컬럼이 갖고 있는 값중 보고 싶은 값 필터링    
+언피봇: 컬럼을 로우로 --> 컬럼에서 로우로 내려오는 컬럼의 데이터를 담는 새로운 컬럼명 / FOR 컬럼에서 로우로 내려오는 컬럼명을 담는 새로운 컬럼명 / IN 컬럼에서 로우로 내려오는 컬럼명 모두 기술 
+
+주의: 피봇은 FROM 절에 걸어준 테이블의 모든 컬럼 중 PIVOT 절에 기술한 컬럼을 제외하고 모두 GROUP BY 해버린다
 
 ## CUBE 함수
 ```
