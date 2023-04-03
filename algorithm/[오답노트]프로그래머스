@@ -1,0 +1,17 @@
+## 교점에 별 만들기(Level 2) 
+https://school.programmers.co.kr/learn/courses/30/lessons/87377
+
+1. 오버플로우를 고려하지 않음. int로 선언한 변수가 자신의 변수타입의 범위 값을 벗어나지 않더라도 int * int 에서 범위 값을 벗어나게 되면 오버플로우가 발생해 이후 이어지는 연산과정에서 잘못된 값이 도출된다.  
+```java
+long lo;
+int i = 999999999;
+int j = 999999999;
+int k = 999999999;
+
+lo = i * j * k; // 오버플로우 
+lo = (long)i * j * k; // i -> j -> k 순으로 연산이 진행됨. i에서 long으로 변환해서 오버플로우 발생하지 않음
+lo = i * j * (long)k; // i * j 에서 이미 오버플로우 발생. 그 값과 k를 곱하므로 쓰레기값이 도출됨
+```
+2. 2차원 좌표 --> 2차원 배열 변환할 때, 2차원 배열은 y좌표로 먼저 접근한 뒤 x좌표로 접근하는 것에 유의. int[y][x] 
+
+3. Arrays.fill() 사용해서 배열 초기값 채우기 : https://zetawiki.com/wiki/%EC%9E%90%EB%B0%94_Arrays.fill()
