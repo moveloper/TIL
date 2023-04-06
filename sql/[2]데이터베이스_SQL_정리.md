@@ -641,9 +641,78 @@ group by cube(a,b,c) | group by (a,b,c) union all group by (a,b) union all group
 
 쉽게 생각하면  
 피봇: 로우를 컬럼으로  --> 그룹함수 / FOR 그룹핑할 컬럼 / IN 그룹핑한 컬럼이 갖고 있는 값중 보고 싶은 값 필터링    
-언피봇: 컬럼을 로우로 --> 컬럼에서 로우로 내려오는 컬럼의 데이터를 담는 새로운 컬럼명 / FOR 컬럼에서 로우로 내려오는 컬럼명을 담는 새로운 컬럼명 / IN 컬럼에서 로우로 내려오는 컬럼명 모두 기술 
+언피봇: 컬럼을 로우로 --> 컬럼에서 로우로 내려오는 컬럼의 데이터를 담는 새로운 컬럼명 / FOR 컬럼에서 로우로 내려오는 컬럼명을 담는 새로운 컬럼명 / IN 컬럼에서 로우로 내려오는 컬럼명 모두 기술    
+외우기 쉽게 시계방향으로 12시부터 시작해서 3시에 도착하는 것은 로우를 컬럼으로 변경하는 피봇, 3시부터 6시는 컬럼을 로우로 변경하는 것이라 형상화하자.
 
-주의: 피봇은 FROM 절에 걸어준 테이블의 모든 컬럼 중 PIVOT 절에 기술한 컬럼을 제외하고 모두 GROUP BY 해버린다
+
+주의: 피봇은 FROM 절의 테이블에서 PIVOT 절에 기술한 컬럼을 제외하고 SELECT절에 존재하는 컬럼을 모두 GROUP BY 해버린다
+
+추가+)
+```sql
+1. SELECT절에 대한 이해
+/* 실행불가: 위에 '주의'에 적어놓았듯, EMP 테이블의 SELECT 절에 DEPTNO, SAL, JOB 을 전부 GROUP BY 한다. 그런데 SAL은 AVG(SAL)의 변환 값이 새로생성되는 TEST 컬럼에 들어가면서 컬럼이 사라지고, DEPTNO는 FOR절에서 그룹핑할 컬럼이 되면서 또한 사라진다. 
+IN: TEST, OUT: SAL, DEPTNO 으로 SELECT절에서 없는 컬럼을 찾으니 문제가 된다.
+*/ 
+
+SELECT DEPTNO, SAL, JOB
+  FROM EMP
+PIVOT (
+  AVG(SAL)
+  FOR (DEPTNO) 
+  IN ('10' AS TEST)
+);
+
+/* 실행가능 */ 
+SELECT ENAME, TEST 
+  FROM EMP
+PIVOT (
+  AVG(SAL)
+  FOR (DEPTNO) 
+  IN ('10' AS TEST)
+); 
+
+2. FOR 절에 두 개의 컬럼 사용 가능
+/* 통계적으로 의미를 설명하자면, DEPTNO와 JOB과 SELECT절의 ENAME을 그룹핑해서 AVG(SAL)을 구해 DEPTNO가 10이면서 JOB이 MANAGER인 데이터가 존재하면 각 TEST, TEST2 컬럼에 데이터를 나타낸다. 
+*/
+SELECT *
+FROM (
+  SELECT ENAME, DEPTNO, SAL, JOB
+  FROM EMP
+)
+PIVOT (
+  AVG(SAL)
+  FOR (DEPTNO, JOB) 
+  IN (('10','MANAGER') AS TEST, ('20','MANAGER') AS TEST2 )
+);
+
+3. FOR절에 가상화 칼럼 사용 불가, PIVOT전에 출력되는 컬럼값을 미리 별칭을 지정하면 사용 가능
+/*자꾸 chatGPT가 된다 안된다 왔다갔다해서 헷갈렸다..*/
+
+-- 아래처럼 사용불가
+SELECT *
+FROM (
+  SELECT DEPARTMENT_ID, SALARY, JOB_ID
+  FROM EMPLOYEES
+)
+PIVOT (
+  AVG(SALARY)
+  FOR (DEPARTMENT_ID || '_' || JOB_ID) 
+  IN ('10_ACCOUNTANT' AS DEPT_10_ACCOUNTANT, '20_ACCOUNTANT' AS DEPT_20_ACCOUNTANT, '30_ACCOUNTANT' AS DEPT_30_ACCOUNTANT)
+);
+
+-- 아래는 사용가능
+SELECT *
+FROM (
+  SELECT DEPTNO, SAL, JOB, JOB||ENAME AS JE
+  FROM EMP
+)
+PIVOT (
+  AVG(SAL)
+  FOR (JE) 
+  IN (('MANAGERCLARK') AS TEST)
+);
+
+```
 
 ## CUBE 함수
 ```
