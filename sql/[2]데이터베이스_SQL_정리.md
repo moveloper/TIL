@@ -70,6 +70,8 @@
 
 [WITH절](#with절)
 
+[DROP TABLE과 CASCADE CONSTRAINTS 옵션(by charGPT)](#drop-table과-cascade-constraints-옵션by-chatgpt)
+
 [PRIMARY KEY 삭제시 유의할 점](#primary-key-삭제시-유의할-점)
 
 [PRIMARY KEY 생성하는 여러가지 방법](#primary-key-생성하는-여러가지-방법)
@@ -794,6 +796,23 @@ WITH EXAMPLE AS
 SELECT * FROM EXAMPLE
 ```
 
+## DROP TABLE과 CASCADE CONSTRAINTS 옵션(by chatGPT) 
+```
+나: 오라클에서 DROP TABLE 명렁어는 해당테이블의 PK와 인덱스도 모두 DROP하는거야?
+
+GPT:
+오라클에서 DROP TABLE 명령은 해당 테이블을 삭제하고 해당 테이블에 대한 모든 인덱스, 제약 조건 및 트리거도 모두 삭제합니다. 이에 따라 해당 테이블의 기본 키(primary key)와 인덱스도 모두 삭제됩니다.
+하지만, 테이블의 기본 키나 인덱스를 다른 테이블에서 참조하고 있다면 DROP TABLE 명령은 실패할 것입니다. 이 경우에는 먼저 참조하는 다른 테이블에서 해당 기본 키나 인덱스에 대한 참조를 제거한 후에 DROP TABLE 명령을 실행해야 합니다.
+
+나: 삭제하려는 테이블의 기본 키나 인덱스를 다른 테이블에서 참조하고 있을 때, CASCADE CONSTRAINTS 옵션을 적어주면 해결되나?
+
+GPT:
+네, CASCADE CONSTRAINTS 옵션을 사용하면 삭제하려는 테이블의 기본 키나 인덱스를 참조하는 다른 테이블의 제약 조건도 함께 삭제됩니다.
+
+CASCADE CONSTRAINTS 옵션을 사용하면 삭제하려는 테이블과 관련된 모든 제약 조건(외래 키, 참조 무결성 등)도 함께 삭제되므로 테이블을 보다 쉽게 삭제할 수 있습니다.
+
+하지만, CASCADE CONSTRAINTS 옵션을 사용할 때는 주의해야 할 점이 있습니다. 만약 삭제하려는 테이블과 관련된 제약 조건이 많은 경우, 이 옵션을 사용하면 의도하지 않은 데이터 손실이 발생할 수 있습니다. 따라서 CASCADE CONSTRAINTS 옵션을 사용하기 전에 모든 제약 조건을 신중하게 검토하고, 데이터 손실이 발생하지 않도록 해야 합니다.
+```
 ## PRIMARY KEY 삭제시 유의할 점
 ALTER TABLE 테이블명 DROP PRIMARY KEY; 구문을 사용할 때 주의할 점이 있다. PRIMARY KEY를 생성하는 방법에 따라 제약조건과 인덱스 모두가 삭제 될 때가 있고, 제약조건만 삭제되고 인덱스는 그대로 남아 있는 경우가 발생하기도 한다. PRIMARY KEY를 생성할 때 인덱스와 제약조건을 동시에 생성하면 삭제할 때도 동시에 삭제가 되고, 이미 생성된 인덱스를 사용해서 PRIMARY KEY를 생성하면, 위 구문 수행시 제약조건만 삭제가 되고 인덱스는 남아있는다.    
 이미 운영중인 시스템에서 PRIMARY KEY를 삭제 및 변경해야 한다면 아래와 같이 명시해서 작업하는 것이 바람직하다. 
@@ -841,9 +860,9 @@ ALTER TABLE TEST_TABLE ADD PRIMARY KEY(USER_ID..)
 
     SELECT * FROM EMPLOYEE WHERE 1=1
         IF A가 NULL이 아니면
-            WHERE EMPLOYEE_ID = A
+            AND EMPLOYEE_ID = A
         IF B가 NULL이 아니면
-            WHERE EMPLOYEE_NAME = B
+            AND EMPLOYEE_NAME = B
    ```
 ## Join Update(조인 업데이트) 방법 (DBMS 별 구문 비교)
 

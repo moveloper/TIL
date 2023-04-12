@@ -15,3 +15,23 @@ lo = i * j * (long)k; // i * j 에서 이미 오버플로우 발생. 그 값과 
 2. 2차원 좌표 --> 2차원 배열 변환할 때, 2차원 배열은 y좌표로 먼저 접근한 뒤 x좌표로 접근하는 것에 유의. int[y][x] 
 
 3. Arrays.fill() 사용해서 배열 초기값 채우기 : https://zetawiki.com/wiki/%EC%9E%90%EB%B0%94_Arrays.fill()
+
+
+## 거리두기 확인하기(Level 2)
+https://school.programmers.co.kr/learn/courses/30/lessons/81302
+
+1. 배열의 범위를 벗어나는지 확인하기 
+```java 
+for (int d = 0; d < 4; d++) {
+    ny = y + dy[d];
+    nx = x + dx[d];
+    // 아래에서처럼 ny < 0 을 먼저 검증하지 않으면, nx >= room[ny].length에서 IndexOutOfBoundsException이 발생한다. 
+    if (nx < 0 || nx >= room[ny].length || ny < 0 || ny >= room.length) {
+    continue;
+    }
+}
+
+```
+2. dx, dy 설정할 때 상-0, 하-3, 좌-1, 우-2 이런 순서대로하면 반대방향 인덱스끼리 더하면 3이 되는 것을 활용할 수 있다. 
+
+3. 한번 더 실수했다. 2차원 배열은 y좌표로 먼저 접근하고 x좌표로 접근하도록 하자. 헷갈리니까 변수 네이밍을 x, y로 해버리자. `int[y][x]`!!!
