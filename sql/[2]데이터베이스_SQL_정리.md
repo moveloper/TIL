@@ -12,6 +12,8 @@
 
 [관계성이 없는 임시테이블끼리 조인할 때 생각해야할 것들..](#관계성이-없는-임시테이블끼리-조인할-때-생각해야할-것들)
 
+[같은 테이블 여러번 조인할 때 최선의 방법](#같은-테이블-여러번-조인할-때-최선의-방법)
+
 [TO_CHAR로 숫자를 변환할 때 공백이 생기는 이유와 해결방법](#to_char로-숫자를-변환할-때-공백이-생기는-이유와-해결방법)
 
 [OUTER JOIN 시 착각하기 쉬운 것 2가지](#outer-join-시-착각하기-쉬운-것)
@@ -265,6 +267,33 @@ B테이블 pk가 unique
 
 B테이블 pk가 non unique
  A.col1 = B.col3
+```
+
+## 같은 테이블 여러번 조인할 때 최선의 방법
+http://www.gurubee.net/article/59025 
+
+아래는 chatGPT가 알려준 방법.. outer join + or조건으로 해결할 수도 있다.
+```sql
+with user_id as (
+select '홍길동' name, '1' id from dual
+union all 
+select '이순신', '2' from dual
+union all 
+select '신사임당', '3' from dual
+union all 
+select '강감찬', '4' from dual
+), owner as (
+select '홍길동' name, '이순신' friend_name from dual
+union all 
+select '신사임당' , '정약용' from dual
+)
+SELECT o.name,
+       o.friend_name,
+       MAX(CASE WHEN u.name = o.name THEN u.id ELSE NULL END) id,
+       MAX(CASE WHEN u.name = o.friend_name THEN u.id ELSE NULL END) friend_id
+FROM   owner o LEFT OUTER JOIN user_id u
+ON     o.name = u.name OR o.friend_name = u.name
+GROUP BY o.name, o.friend_name;
 ```
 
 ## TO_CHAR로 숫자를 변환할 때 공백이 생기는 이유와 해결방법
@@ -780,7 +809,10 @@ PRIOR 매니저 = 사원(이전 레벨의 매니저값을 사원값으로 가지
   * PRIOR 조건에 추가된 조건: START WITH 절에서 필터링된 시작데이터는 결과목록에 포함되며, <u>*PRIOR조건을 모두 만족하는 경우에만 하위데이터가 전개된다*</u>. PRIOR조건을 모두 만족시키지 않는 경우 하위데이터 자체가 전개 안됨
 * WHERE절에 작성된 조건: 계층구조를 모두 전개한 후 조건을 충족하는 데이터만 결과목록에 출력된다.
  
-reference)  
+reference)
+
+https://m.blog.naver.com/PostView.naver?blogId=su12192000&logNo=222283217164&proxyReferer=https:%2F%2Fwww.google.com%2F
+
 https://valuableinfo.tistory.com/entry/%EC%98%A4%EB%9D%BC%ED%81%B4-%EA%B3%84%EC%B8%B5%EC%BF%BC%EB%A6%AC-%EB%91%90%EB%B2%88%EC%A7%B8-CONNECT-BY-PRIOR
 
 
@@ -795,6 +827,10 @@ WITH EXAMPLE AS
 
 SELECT * FROM EXAMPLE
 ```
+
+심화-Recursive with절 : https://camel-context.tistory.com/16
+
+
 
 ## DROP TABLE과 CASCADE CONSTRAINTS 옵션(by chatGPT) 
 ```
