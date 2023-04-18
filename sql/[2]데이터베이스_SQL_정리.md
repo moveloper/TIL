@@ -463,13 +463,17 @@ SELECT '1번' AS PK1
 PK1 PK2 PK3
 3번 1번 2번 
 
-3. 테이블에 default 값이 설정되어 있다고 생략하면 안된다. 
+3. 테이블에 default 값이 설정되어 있다고 무작정 생략하면 안된다. 
 INSERT INTO TEST_TAB 
 SELECT '1' 
      , '2'
   FROM DUAL ;
 -- 결과
 ORA-00947: 값의 수가 충분하지 않습니다  
+
+4. 대신 INSERT INTO 절에 컬럼을 명시한다면 생략할 수 있다. 
+INSERT INTO TEST_TAB (COL1, COL2)
+SELECT '1', '2' FROM DUAL;
 
 참조: https://stackoverflow.com/questions/29421094/insert-into-using-a-query-and-add-a-default-value 
 ```
