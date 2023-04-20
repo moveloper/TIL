@@ -834,7 +834,23 @@ SELECT * FROM EXAMPLE
 
 심화-Recursive with절 : https://camel-context.tistory.com/16
 
-
+```sql
+-- recursive with 절에서 계층형으로 정렬하려면
+WITH
+TEMP (LVL, NAME, CODE, UP_CODE, TOP_CODE, HIERARCHY) AS 
+(
+SELECT 1, NAME, CODE, UP_CODE, CODE AS TOP_CODE, CODE 
+FROM TABLE_NAME
+WHERE UP_CODE IS NULL 
+UNION ALL
+SELECT B.LVL +1, A.NAME, A.CODE, A.UP_CODE, B.TOP_CODE, HIERARCHY || A.CODE --  이 부분이 root부터 자신의 레코드까지가 순서대로 누적되어 나열되어 계층으로 정렬할 수 있음
+FROM TABLE_NAME A, TEMP B
+WHERE A.UP_CODE = B.CODE
+)
+SELECT *
+FROM TEMP 
+ORDER BY HIERARCHY;
+```
 
 ## DROP TABLE과 CASCADE CONSTRAINTS 옵션(by chatGPT) 
 ```
