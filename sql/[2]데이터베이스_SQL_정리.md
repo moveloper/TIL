@@ -18,6 +18,8 @@
 
 [OUTER JOIN 시 착각하기 쉬운 것 2가지](#outer-join-시-착각하기-쉬운-것)
 
+[OUTER JOIN과 스칼라 서브쿼리](#outer-join과-스칼라-서브쿼리)
+
 [MERGE INTO](#merge-into)
 
 [ORA-29275: partial multibyte character와 DB LINK](#ora-29275-partial-multibyte-character와-db-link)
@@ -327,6 +329,29 @@ SELECT TRIM(TO_CHAR(999, '000')) FROM DUAL; -- 결과 TRIM(' 999')
      AND NVL(A.COL2, 'X') = NVL(B.COL2, 'X');   
    ```
    처음에 볼 때는 '아우터 조인한 결과가 NULL일 때 'X'로 비교하는건가?'하고 헷갈렸는데 조인에 대한 이해가 모자라서였다. ANSI로 풀었을 때 비로소 이해가 되었다. 테이블 A와 테이블 B가 아우터 조인하는데, 그 조인 컬럼으로 A.COL1과 B.COL1의 일치여부와 A.COL2와 B.COL2의 일치여부를 기준으로 한다. 다만, A.COL2와 B.COL2가 NULL이라면 'X'로 값을 치환한 뒤에 조인을 실시한다.    
+
+## OUTER JOIN과 스칼라 서브쿼리
+http://wiki.gurubee.net/pages/viewpage.action?pageId=4948083
+
+- 스칼라 서브쿼리와 OUTER JOIN은 서로 변형이 가능하다. 
+- OUTER JOIN -> 스칼라 서브쿼리: OUTER JOIN을 하는 집합이 인라인뷰이면서 그룹함수를 사용해서 VIEW MERGING이 안될 때
+- 스칼라 서브쿼리 -> OUTER JOIN: 인라인 뷰 안에 스칼라 서브쿼리 컬럼이 존재하고 그 뷰 밖에서 서브쿼리 컬럼을 조건으로 사용하는 경우, 인덱스가 있다 하더라도 컬럼이 가공되어 있기 때문에 VIEW MERGING이 안될 때
+  - 스칼라 서브쿼리에 IN 절이 있는 경우
+  ``` sql 
+  SELECT EMPNO,
+       DEPT_NO
+  FROM   (SELECT E.EMPNO,
+                D.DEPTNO DEPT_NO
+          FROM   EMP  E,
+                DEPT D
+          WHERE  D.DEPTNO   = E.DEPTNO(+)
+          --AND    D.DNAME(+) IN ('SALES_1', 'SALES_2', 'SALES_3')
+          AND    DECODE(D.DNAME(+), 'SALES_1', 1,
+                                    'SALES_2', 1,
+                                    'SALES_3', 1) = 1)
+  WHERE  DEPT_NO = 10      
+  ;
+  ```
 
 ## MERGE INTO 
 https://gent.tistory.com/406
