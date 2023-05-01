@@ -5,6 +5,9 @@
 
 ## 3. Java가 기본으로 제공하는 함수형 인터페이스
 - java.lang.funcation 패키지: 자바에서 미리 정의해둔 자주 사용할만한 함수 인터페이스
+- Lazy Evaluation 발생: 불필요한 연산을 피하기 위해 연산을 지연시켜 놓았다가 필요할 때 연산하는 방법
+  - https://velog.io/@rockpago/Lazy-Evaluation (요약: 람다 표현식은 함수의 실행 결과가 아닌 함수의 동작 자체를 표현한다.따라서 람다식 자체는 연산이 아니다. 람다식이 표현하는 익명구현함수(get, apply와 같은)가 실제로 호출될 때
+    비로소 함수가 동작하여 값을 연산하는 것이다.)
 - Function<T, R>
   -  T 타입을 받아서 R 타입을 리턴하는 함수 인터페이스
   -  R apply(T t)
@@ -196,7 +199,7 @@ public class App {
 
 ```
 
-## Stream API
+## Stream API 
 ```java
 
 public class App {
@@ -258,7 +261,7 @@ public class App {
         System.out.println("수업 이름만 모아서 스트림 만들기");
         springClasses.stream()
                 .map(oc -> oc.getTitle())
-                .forEach(System.out::println);
+                .forEach(System.out::println); 
 
         List<OnlineClass> javaClasses = new ArrayList<>();
         javaClasses.add(new OnlineClass(6, "The Java, Test", true));
@@ -269,29 +272,183 @@ public class App {
         keesunEvents.add(springClasses);
         keesunEvents.add(javaClasses);
 
-        System.out.println("두 수업 목록에 들어잇는 모든 수업 아이디 출력");
+        System.out.println("두 수업 목록에 들어잇는 모든 수업 아이디 출력"); 
         keesunEvents.stream()
-                .flatMap(Collection::stream)
-                .forEach(oc -> System.out.println(oc.getId()));
+                .flatMap(Collection::stream) // flatMap(3차원배열의 스트림) -> 결과: 2차원 배열
+                .forEach(oc -> System.out.println(oc.getId())); // 1, 2, 3, 4, 5, 6, 7, 8
 
-        System.out.println("10부터 1씩 증가하는 무제한 스트림 중에서 앞에 10개 빼고 최대 10개 까지만");
+        System.out.println("10부터 1씩 증가하는 무제한 스트림 중에서 앞에 10개 빼고 최대 10개 까지만"); 
         Stream.iterate(10, i -> i + 1)
                 .skip(10)
                 .limit(10)
-                .forEach(System.out::println);
+                .forEach(System.out::println); // 20, 21, ..., 29
 
         System.out.println("자바 수업 중에 Test가 들어있는 수업이 있는지 확인");
         boolean test = javaClasses.stream()
                 .allMatch(oc -> oc.getTitle().contains("Test"));
-        System.out.println(test);
+        System.out.println(test); // false
 
         System.out.println("스프링 수업 중에 제목에 spring이 들어간 제목만 모아서 List로 만들기");
         List<String> spring = springClasses.stream()
                 .filter(oc -> oc.getTitle().contains("spring"))
                 .map(OnlineClass::getTitle)
                 .collect(Collectors.toList());
-        spring.forEach(System.out::println);
+        spring.forEach(System.out::println); // spring boot, spring data jpa, spring mvc, spring core
     }
 }
 
+```
+
+## Optional 
+
+```java
+public class App {
+    private static class OnlineClass{
+        // 위 Stream API에서 사용한 것과 동일한 클래스이고, 아래의 필드와 getter, setter만 추가되었다. 
+        public Progress progress;
+        
+//        public Progress getProgress() {
+//            // 1. 예외를 던진다
+//            if (this.progress == null) {
+//                throw new IllegalStateException();
+//            }
+//            // 2. 그냥 null을 리턴한다. 클라이언트 코드에서 null 체크를 한다.
+//            return progress;
+//        }
+
+        public Optional<Progress> getProgress() {
+            return Optional.ofNullable(progress); //
+        }
+
+        public void setProgress(Progress progress) {
+            this.progress = progress;
+        }
+    }
+
+    private static class Progress {
+        private Duration studyDuration;
+        private boolean finished;
+
+        public Duration getStudyDuration() {
+            return studyDuration;
+        }
+
+        public void setStudyDuration(Duration studyDuration) {
+            this.studyDuration = studyDuration;
+        }
+    }
+
+    public static void main(String[] args) {
+        List<OnlineClass> springClasses = new ArrayList<>();
+        springClasses.add(new OnlineClass(1, "spring boot", true));
+        springClasses.add(new OnlineClass(2, "spring data jpa", true));
+        springClasses.add(new OnlineClass(3, "spring mvc", false));
+        springClasses.add(new OnlineClass(4, "spring core", false));
+        springClasses.add(new OnlineClass(5, "rest api development", false));
+
+        // Optional: 오직 값 한 개가 들어있을 수도 없을 수도 있는 컨네이너.
+        // 사용이유: 메소드에서 작업 중 특별한 상황에서 값을 제대로 리턴할 수 없는 경우 선택할 수 있는 방법
+        // -> 예외를 던지면 비용이 높아지고, null을 리턴하면 해당 코드를 사용하는 클라이언트 코드가 주의해야 한다
+        // -> Optional을 리턴함으로써 클라이언트에게 명시적으로 빈 값이 있을 수도 있다는 것을 알려주고,
+        // 빈 값인 경우에 대한 처리를 강제하는 효과가 있다.
+        OnlineClass spring_boot = new OnlineClass(1, "spring boot", true);
+        Duration studyDuration = spring_boot.getProgress().get().getStudyDuration(); // 'Optional.get()' without 'isPresent()' check 경고발생
+
+        // 리턴값으로만 쓰기를 권장. 아래와 같은 사용은 피하는게 좋음
+        // 1) 메소드 매개변수 타입 -> 가독성이 떨어짐. Optional 타입을 매개변수로 사용하면 메소드가 어떤 값을 필요로 하는지 명확하지 않아진다.
+        // 또한 Null 포인터 예외가 발생할 수 있다. Optional 타입을 매개변수로 사용하면 해당 매개변수가 null 값을 가질 수 있기 때문에 이를 검사하지 않으면 NullPointerException이 발생할 수 있다.
+        // 따라서, 가능하면 Optional 타입 대신에 @Nullable 어노테이션 또는 다른 방법을 사용하여 메소드 매개변수가 null 값을 가질 수 있음을 명시하는 것이 좋다.
+        // 또는 메소드가 null 값을 허용하지 않도록 설계하는 것이 더 바람직할 수 있다.
+        // 2) 맵의 키 타입 -> 맵의 key는 null일 수 없는데, Optional 타입으로 null을 반환할 수 있다? 작성하면 안되는 코드
+        // 3) 인스턴스 필드 타입 -> 좋지 않은 설계. 상속(Inheritance) 또는 위임(Delegation)으로 사용
+
+        // Optional.of(10)처럼 primitive 타입을 사용할 수 있지만, boxing과 unboxing으로 인해 성능에 좋지 않다.
+        // OptionalInt.of(10)과 같이 primitive 타입용 Optional을 사용하자
+        
+        // Optional을 리턴하는 메소드에서 null을 리턴하지 말자. 사용자는 Optional이 제공하는 메소드를 사용해서 빈 값인지 아닌지를 판단하려고 하는데
+        // null을 리턴한다? NullPointerException 발생! null이 아니라 Optional.empty()를 리턴해야 사용자가 올바르게 사용할 수 있다.
+        Optional<Progress> progress = spring_boot.getProgress();
+        progress.ifPresent(p -> System.out.println(p.getStudyDuration()));
+
+        // Collection, Map, Stream, Array 등은 이미 null 값을 가질 수 있는 데이터 타입으로 설계되어 있기 때문에
+        // Optional로 감싸는 것이 권장되지 않는다.
+    }
+}
+```
+
+## Optional API
+
+```java
+public class App {
+    public static void main(String[] args) {
+        List<OnlineClass> springClasses = new ArrayList<>();
+        springClasses.add(new OnlineClass(1, "spring boot", true));
+        springClasses.add(new OnlineClass(5, "rest api development", false));
+
+        // Optional 만들기
+        Optional<Object> o = Optional.of("TEST"); // of(null)은 null 매개변수 사용시 NPE 발생
+        Optional<Object> o1 = Optional.ofNullable(null); // ofNullable(null)은 null 매개변수 허용
+        Optional<Object> empty = Optional.empty();
+        System.out.println(o1); // Optional.empty
+        System.out.println(empty); // Optional.empty
+
+        Optional<OnlineClass> spring = springClasses.stream()
+                .filter(oc -> oc.getTitle().startsWith("spring"))
+                .findFirst();
+
+        Optional<OnlineClass> jpa = springClasses.stream()
+                .filter(oc -> oc.getTitle().startsWith("jpa"))
+                .findFirst();
+        // Optional에 값이 있는지 없는지 확인하기: isPresent(), isEmpty() (java11부터)
+        boolean present = spring.isPresent();
+
+        OnlineClass onlineClass = spring.get();
+        System.out.println(onlineClass.getTitle());
+
+        // 비어있는 Optional에서 꺼내려고하면? NoSuchElementException 발생
+        // OnlineClass onlineClass2 = jpa.get();
+        // System.out.println(onlineClass2.getTitle());
+
+        // Optional에 값이 있는 경우 그 값을 가지고 ~ 하라
+        spring.ifPresent(oc -> System.out.println(oc.getTitle()));
+
+        // Optional에 값이 있으면 가져오고, 없으면 Optional이 감싸고 있는 타입의 인스턴스를 리턴하라
+        OnlineClass onlineClass1 = jpa.orElse(createNewClass());
+        System.out.println(onlineClass1.getTitle());  // New Class
+        OnlineClass onlineClassNull = jpa.orElse(null);
+        System.out.println(onlineClassNull); // null
+
+        // 위에 orElse는 인스턴스가 비었든 아니든 createNewClass() 코드를 실행해버린다.
+        // orElseGet는 아래와 같은 함수인데
+        // public T orElseGet(Supplier<? extends T> supplier) {
+        //    return value != null ? value : supplier.get();
+        // }
+        // value가 null일 때 비로소 supplier.get()을 호출하여 연산을 실행하므로
+        // 즉 람다의 lazy 동작방식으로인해 createNewClass() 코드를 실행하지 않게된다.
+        OnlineClass onlineClass2 = spring.orElseGet(App::createNewClass);
+
+        // Optional에 값이 있으면 가져오고, 없으면 에러를 던져라
+        // OnlineClass onlineClass3 = jpa.orElseThrow(IllegalStateException::new);
+
+        // Optional이 비어있지 않다는 가정, 비어있으면 의미없음
+        Optional optional = spring.filter(oc -> !oc.isClosed());
+        System.out.println(optional.isEmpty()); // true
+
+        // Optional에 들어있는 값 변환하기
+        System.out.println(spring.get().getClass());  // OnlineClass
+        Optional<Integer> integer = spring.map(OnlineClass::getId);
+        System.out.println(integer.get()); // 1
+
+        // Optional에 들어있는 값을 Optional로 변환하면 복잡해지는데, flatMap을 사용하면 편리하다
+        Optional<Optional<Progress>> progress = spring.map(OnlineClass::getProgress);
+        Optional<Progress> progress1 = progress.orElse(Optional.empty());
+
+        Optional<Progress> progress2 = spring.flatMap(OnlineClass::getProgress);
+
+    }
+
+    private static OnlineClass createNewClass(){
+        return new OnlineClass(10, "New Class", false);
+    }
+}
 ```
