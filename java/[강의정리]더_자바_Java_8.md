@@ -452,3 +452,68 @@ public class App {
     }
 }
 ```
+
+
+## Date와 Time API
+
+```java
+public class App {
+    /*
+    그전까지 사용하던 java.util.Date 클래스는 mutable 하기 때문에 thead safe하지 않다.
+    클래스 이름이 명확하지 않다. Date인데 시간까지 다룬다.
+    버그 발생할 여지가 많다. (타입 안정성이 없고, 월이 0부터 시작한다거나..)
+    * */
+    public static void main(String[] args) throws InterruptedException {
+        // 기계용 시간
+        Instant instant = Instant.now();
+        System.out.println(instant); // 기준시 UTC, GMT
+        System.out.println(instant.atZone(ZoneId.of("UTC"))); // 기준시 UTC, GMT
+
+        ZoneId zone = ZoneId.systemDefault();
+        System.out.println("zone = " + zone); // Asia/Seoul
+
+        ZonedDateTime zonedDateTime = instant.atZone(zone);
+        System.out.println("zonedDateTime = " + zonedDateTime); // 2023-05-06T10:53:29.925536+09:00[Asia/Seoul]
+
+        // 인류용 시간
+        LocalDateTime now = LocalDateTime.now(); // 현재 시스템 Zone에 해당하는(로컬) 일시를 리턴한다. app이 미국에서 배포된다면 해당 서버의 Zone인 미국시간으로 찍힘
+        System.out.println(now);
+        LocalDateTime day = LocalDateTime.of(2023, Month.MAY, 6, 0, 0, 0); // 특정 일시
+        ZonedDateTime laDateTime = ZonedDateTime.of(2023, 5, 6, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles")); // 특정 Zone의 특정 일시
+        System.out.println("laDateTime = " + laDateTime);
+
+        // 기간을 표현하는 방법 (기계)
+        Duration betweenMachineTime = Duration.between(Instant.now(), Instant.now().plus(100, ChronoUnit.DAYS));
+        System.out.println("betweenMachineTime.toHours() = " + betweenMachineTime.toHours()); // 2400 (100 * 24hours)
+        System.out.println(betweenMachineTime.getSeconds()); // 8640000 (100 * 24 * 60 * 60)
+
+        // 기간을 표현하는 방법 (인류)
+        LocalDate today = LocalDate.now(); // 2023-05-06
+        LocalDate birthday = LocalDate.of(2023, Month.JULY, 15); // 2023-07-15
+        Period between = Period.between(today, birthday);
+        // between = P2M9D/ between.getDays() = 9 -> 월과 년도를 고려하지 않고 일 단위 차이만 반환한다
+        System.out.println("between = " + between + "/ between.getDays() = " + between.getDays()); 
+        // 아래는 기간을 반환한다.
+        long daysBetween = ChronoUnit.DAYS.between(today, birthday);
+        System.out.println("daysBetween = " + daysBetween);
+
+        // 파싱 또는 포매팅
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM/dd/yyyy");
+        System.out.println(now.format(formatter)); // 05/06/2023
+        LocalDate parse = LocalDate.parse("05/06/2023", formatter);
+        System.out.println(parse); // 2023-05-06
+
+        // 레거시 API 지원
+        Date date = new Date();
+        Instant ins = date.toInstant();
+        Date newDate = date.from(instant);
+
+        GregorianCalendar gregorianCalendar = new GregorianCalendar();
+        ZonedDateTime dateTime = gregorianCalendar.toInstant().atZone(ZoneId.systemDefault()); // java8 to regacy
+        GregorianCalendar from = GregorianCalendar.from(dateTime); // regacy to java8
+
+        ZoneId zoneId = TimeZone.getTimeZone("PST").toZoneId(); // java8 to regacy
+        TimeZone timeZone = TimeZone.getTimeZone(zoneId); // regacy to java8
+    }
+}
+```
