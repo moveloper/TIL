@@ -199,7 +199,7 @@ public class App {
 
 ```
 
-## Stream API 
+## 9. Stream API 
 ```java
 
 public class App {
@@ -299,7 +299,7 @@ public class App {
 
 ```
 
-## Optional 
+## 10. Optional 
 
 ```java
 public class App {
@@ -376,7 +376,7 @@ public class App {
 }
 ```
 
-## Optional API
+## 11. Optional API
 
 ```java
 public class App {
@@ -454,7 +454,7 @@ public class App {
 ```
 
 
-## Date와 Time API
+## 13. Date와 Time API
 
 ```java
 public class App {
@@ -517,3 +517,453 @@ public class App {
     }
 }
 ```
+
+
+## 14. 자바 Concurrent 프로그래밍 소개
+
+1. 쓰레드 구현
+```java
+public class App {
+    // Concurrent 프로그래밍 소개
+    public static void main(String[] args) throws InterruptedException {
+
+        // 1. Thread 상속
+        MyThread myThread = new MyThread();
+        myThread.start();
+
+        System.out.println("Hello: " + Thread.currentThread().getName());
+
+        // 2. Runnable 구현
+        Thread myThread2 = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                long count = 0;
+                for (int i = 0; i < Integer.MAX_VALUE; i++) {
+                    for (int j = 0; j < 10; j++) {
+                        count += 1;
+                    }
+                }
+                System.out.println("count = " + count);
+                System.out.println("Hello2: " + Thread.currentThread().getName());
+            }
+        });
+        myThread2.start();
+
+        // 3. 람다 구현
+        Thread myThread3 = new Thread(() -> {
+            System.out.println("Hello3: " + Thread.currentThread().getName());
+        });
+        myThread3.start();
+
+        /* 출력 순서
+        Hello: main
+        Thread: Thread-0
+        Hello3: Thread-2
+        Hello2: Thread-1
+         */
+    }
+
+    static class MyThread extends Thread {
+        @Override
+        public void run() {
+            System.out.println("Thread: " + Thread.currentThread().getName());
+        }
+    }
+}
+```
+
+2. interrupt()
+
+```java
+public class App {
+    public static void main(String[] args) throws InterruptedException {
+        Thread thread = new Thread(() -> {
+           while (true) {
+               System.out.println("Loop Thread");
+               try {
+                   Thread.sleep(1000);
+               } catch (InterruptedException e) {
+                   System.out.println("Exit!");
+                   return;
+               }
+           }
+        });
+        thread.start();
+
+        Thread.sleep(3000L);
+        thread.interrupt();
+    }
+    /**
+     *  Loop Thread
+        Loop Thread
+        Loop Thread
+        Exit!   <- 3초 뒤
+     */
+}
+
+```
+
+3. join()
+
+```java
+public class App {
+    public static void main(String[] args) throws InterruptedException {
+        Thread thread = new Thread(() -> {
+           System.out.println("Thread: " + Thread.currentThread().getName());
+           try {
+               Thread.sleep(3000);
+           } catch (InterruptedException e) {
+               throw new IllegalStateException(e);
+           }
+        });
+        thread.start();
+
+        System.out.println("Hello: " + Thread.currentThread().getName());
+        thread.join();
+        System.out.println(thread + " is finished");
+    }
+    /*
+    Hello: main
+    Thread: Thread-0
+    Thread[Thread-0,5,] is finished <- 3초 뒤
+    */
+}
+```
+
+문제점: 스레드가 많지 않더라도 일일히 인터럽트, 조인 등을 신경쓰면서 프로그래밍 하기 어렵다. 하물며 수십개, 수백개의 스레드를 관리해야 한다면, 사실상 제대로 프로그래밍하기가 매우 어렵다. 이를 해결하기 위해 Executors가 등장하였다. 
+
+## 15. Executors
+Executors가 하는 일
+- 쓰레드 만들기: 애플리케이션이 사용할 쓰레드 풀을 만들어 관리한다.
+- 쓰레드 관리: 쓰레드 생명 주기를 관리한다.
+- 작업 처리 및 실행: 쓰레드로 실행할 작업을 제공할 수 있는 API를 제공한다.
+
+```java
+public class App {
+
+    public static void main(String[] args)  {
+        ExecutorService executorService = Executors.newFixedThreadPool(2);
+        executorService.submit(getRunnable("Hello"));
+        executorService.submit(getRunnable("soon"));
+        executorService.submit(getRunnable("The"));
+        executorService.submit(getRunnable("Java"));
+        executorService.submit(getRunnable("Thread"));
+        
+        executorService.shutdown(); // 처리중인 작업을 기다렸다가 종료
+        // executorService.shutdownNow(); 당장 종료
+        
+        /*Thread pool-1-thread-2
+        Thread pool-1-thread-1
+        Thread pool-1-thread-1
+        Thread pool-1-thread-1
+        Thread pool-1-thread-1*/
+    }
+
+    private static Runnable getRunnable(String message) {
+        return () -> System.out.println("Thread " + Thread.currentThread().getName());
+    }
+
+    
+}
+
+```
+
+## 16. Callable과 Future
+Callable 
+- Runnable과 유사하지만 작업의 결과를 받을 수 있다. 
+
+Future
+- 비동기적인 작업의 현재 상태를 조회하거나 결과를 가져올 수 있다. 
+
+
+```java 
+public class App {
+
+    public static void main(String[] args) throws ExecutionException, InterruptedException {
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
+
+        Callable<String> hello = () -> {
+            Thread.sleep(2000L);
+            return "Hello";
+        };
+
+        Future<String> helloFuture = executorService.submit(hello);
+        System.out.println(helloFuture.isDone()); // false
+        System.out.println("Started!");
+        // helloFuture.cancel(false);
+        // 리턴값으로 취소했으면 true, 못했으면 false
+        // 파라미터값으로 true를 전달하면 현재 진행중인 쓰레드를 interrupt하고, 그러지 않으면 현재 진행중인 작업이 끝날때까지 기다린다.
+        helloFuture.get(); // 블록킹 콜이다(결과를 기다린다)
+
+        System.out.println(helloFuture.isDone()); // true
+        System.out.println("End!");
+
+        executorService.shutdown(); // 처리중인 작업을 기다렸다가 종료
+    }
+}
+```
+
+```java
+public class App {
+
+    public static void main(String[] args) throws ExecutionException, InterruptedException {
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
+
+        Callable<String> hello = () -> {
+            Thread.sleep(2000L);
+            return "Hello";
+        };
+
+        Callable<String> java = () -> {
+            Thread.sleep(3000L);
+            return "Java";
+        };
+
+        Callable<String> soon = () -> {
+            Thread.sleep(1000L);
+            return "Soon";
+        };
+
+        // invokeAll()은 여러 작업을 동시에 실행함. 동시에 실행한 작업 중에 제일 오래 걸리는 작업만큼 시간이 걸림
+        List<Future<String>> futures = executorService.invokeAll(Arrays.asList(hello, java, soon));
+        for (Future<String> f : futures) {
+            System.out.println(f.get());
+        }
+        
+        // invokeAny()는 동시에 실행한 작업 중에 제일 짧게 걸리는 작업만큼 시간이 걸린다. 
+        // 블록킹 콜이다.
+        String s = executorService.invokeAny(Arrays.asList(hello, java, soon));
+        System.out.println(s); // executorService가 싱글스레드가 아닌 3개 이상의 스레드풀을 생성하게 되면 Soon이 가장먼저 출력된다
+
+        executorService.shutdown(); // 처리중인 작업을 기다렸다가 종료
+    }
+}
+```
+
+## 17. CompletableFuture 
+자바에서 비동기(Asynchronous) 프로그래밍을 가능케하는 인터페이스 
+- Future를 사용해서도 어느정도 가능했지만 하기 힘든 일들이 많았다. 
+
+Future로는 하기 어렵던 작업들 
+- Future를 외부에서 완료 시킬 수 없다. 취소하거나 get()에 타임아웃을 설정할 수는 있다. 
+- 블로킹 코드(get())을 사용하지 않고서는 작업이 끝났을 때 콜백을 실행할 수 없다.
+- 여러 Future를 조합할 수 없다. 예: Event 정보 가져온 다음 Event에 참석하는 회원 목록 가져오기 
+- 예외 처리용 API를 제공하지 않는다.
+
+비동기로 작업 실행하기
+- 리턴값이 없는 경우: runAsync()
+- 리턴값이 있는 경우: supplyAsync()
+- 원하는 Executor(쓰레드풀)를 사용해서 실행할 수도 있다. (기본은 ForkJoinPool.commonPool()) 
+
+콜백 제공하기
+- thenApply(Function): 리턴값을 받아서 다른 값으로 바꾸는 콜백
+- thenAccept(Consumer): 리턴값을 또 다른 작업을 처리하는 콜백 (리턴없이)
+- thenRun(Runnable): 리턴값 받지 다른 작업을 처리하는 콜백
+- 콜백 자체를 또 다른 쓰레드에서 실행할 수 있다
+
+
+```java 
+public class App {
+
+    public static void main(String[] args) throws ExecutionException, InterruptedException {
+
+        CompletableFuture<String> stringCompletableFuture = CompletableFuture.supplyAsync(() -> { // 내부에서 Executor 구현체의 execute를 호출하여 작업 큐에 저장
+            try {
+                Thread.sleep(3000L);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            return "Hello";
+        }).thenApply((s) -> {
+            System.out.println("두번째로 3초 후 수행: get() 사용없이 위 작업이 끝났을 때 콜백 " + Thread.currentThread().getName());
+            try {
+                Thread.sleep(3000L);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            return s.toUpperCase();
+        });
+
+
+        CompletableFuture<Void> future = CompletableFuture.runAsync(() -> { // 내부에서 Executor 구현체의 execute를 호출하여 작업 큐에 저장
+            System.out.println("가장먼저 바로 수행: Hello " + Thread.currentThread().getName());
+        });
+
+        // 비동기나 동기나 결과를 가져오려면 get() 메소드를 호출해야 한다.
+        // 하지만 콜백 함수를 사용하면 아래처럼 get()호출로 인한 블로킹없이 thenApply에서처럼 작업 결과를 바로 처리할 수 있다.
+        System.out.println("마지막으로 6초 후 수행: 결과 가져오기 " + stringCompletableFuture.get());
+        System.out.println("마지막으로 6초 후 수행: 결과 가져오기 " + future.get());
+    }
+}
+``` 
+
+조합하기
+- thenCompose(): 두 작업이 서로 이어서 실행하도록 조합
+
+``` java 
+public class App {
+
+    public static void main(String[] args) throws ExecutionException, InterruptedException {
+
+        CompletableFuture<String> hello = CompletableFuture.supplyAsync(() -> {
+            System.out.println("Hello " + Thread.currentThread().getName());
+            return "Hello";
+        });
+
+        CompletableFuture<String> future = hello.thenCompose(App::getWorld);
+        System.out.println(future.get());
+    }
+
+    private static CompletableFuture<String> getWorld(String message) {
+        return CompletableFuture.supplyAsync(() -> {
+            System.out.println("World " + Thread.currentThread().getName());
+            return message + "World";
+        });
+    }
+}
+```
+
+- thenCombine(): 두 작업을 독립적으로 실행하고 둘 다 종료 했을 때 콜백 실행
+```java
+public class App {
+
+    public static void main(String[] args) throws ExecutionException, InterruptedException {
+
+        CompletableFuture<String> hello = CompletableFuture.supplyAsync(() -> {
+            System.out.println("Hello " + Thread.currentThread().getName());
+            return "Hello";
+        });
+
+        CompletableFuture<String> world = CompletableFuture.supplyAsync(() -> {
+            System.out.println("World " + Thread.currentThread().getName());
+            return "World";
+        });
+
+        CompletableFuture<String> future = hello.thenCombine(world, (h, w) -> h + " " + w);
+        System.out.println(future.get());
+    }
+}
+```
+
+- allOf(): 여러 작업을 모두 실행하고 모든 작업 결과에 콜백 실행
+```java
+public class App {
+
+    public static void main(String[] args) throws ExecutionException, InterruptedException {
+
+        CompletableFuture<String> hello = CompletableFuture.supplyAsync(() -> {
+            System.out.println("Hello " + Thread.currentThread().getName());
+            return "Hello";
+        });
+
+        CompletableFuture<String> world = CompletableFuture.supplyAsync(() -> {
+            System.out.println("World " + Thread.currentThread().getName());
+            return "World";
+        });
+
+        List<CompletableFuture> futures = Arrays.asList(hello, world);
+        CompletableFuture[] futuresArray = futures.toArray(new CompletableFuture[futures.size()]);
+
+        //CompletableFuture<Void> future = CompletableFutre.allOf(hello, world)
+        //        .thenAccept(System.out::println); -> null
+        //System.out.println(future.get())  -> null 출력 
+
+        CompletableFuture<List<Object>> results = 
+        CompletableFuture.allOf(futuresArray)
+                         .thenApply(v -> futures
+                                            .stream()
+                                            .map(CompletableFuture::join)
+                                            .collect(Collectors.toList()));
+
+        results.get().forEach(System.out::println);
+    }
+}
+```
+
+- anyOf(): 여러 작업 중에 가장 빨리 끝난 하나의 결과에 콜백 실행
+```java
+public class App {
+
+    public static void main(String[] args) throws ExecutionException, InterruptedException {
+
+        CompletableFuture<String> hello = CompletableFuture.supplyAsync(() -> {
+            System.out.println("Hello " + Thread.currentThread().getName());
+            return "Hello";
+        });
+
+        CompletableFuture<String> world = CompletableFuture.supplyAsync(() -> {
+            System.out.println("World " + Thread.currentThread().getName());
+            return "World";
+        });
+
+        CompletableFuture<Void> future = CompletableFuture.anyOf(hello, world).thenAccept((s) -> {
+            System.out.println(s);
+        });
+
+        future.get();   // Hello 또는 World 중 먼저 처리되는 것 하나만 출력
+
+    }
+}
+```
+
+예외처리
+- exceptionally(Function)
+```java
+public class App {
+
+    public static void main(String[] args) throws ExecutionException, InterruptedException {
+        boolean throwError = true;
+
+        CompletableFuture<String> hello = CompletableFuture.supplyAsync(() -> {
+            if (throwError) {
+                throw new IllegalStateException();
+            }
+            System.out.println("Hello " + Thread.currentThread().getName());
+            return "Hello";
+        }).exceptionally(ex -> {
+            return "Error!";
+        });
+        System.out.println(hello.get());
+    }
+}
+
+```
+- handle(BiFunction)
+```java
+public class App {
+
+    public static void main(String[] args) throws ExecutionException, InterruptedException {
+        boolean throwError = true;
+
+        CompletableFuture<String> hello = CompletableFuture.supplyAsync(() -> {
+            if (throwError) {
+                throw new IllegalStateException();
+            }
+            System.out.println("Hello " + Thread.currentThread().getName());
+            return "Hello";
+        }).handle( (result, ex) -> {
+            if (ex != null) {
+                System.out.println(ex);
+                return "ERROR!";
+            }
+            return result;
+        });
+        System.out.println(hello.get());
+    }
+}
+```
+
+## 19. 애노테이션의 변화 
+
+(복습)
+어노테이션은 메타데이터라고 볼 수 있다. 메타데이터란 애플리케이션이 처리해야할 데이터가 아니라, 컴파일 과정과 실행 과정에서 코드를 어떻게 컴파일하고 처리할 것인지를 알려주는 정보이다.
+어노테이션은 다음 세 가지 용도로 사용된다.
+1. 컴파일러에게 코드 문법 에러를 체크하도록 정보를 제공
+2. 소프트웨어 개발 툴이 빌드나 배치 시 코드를 자동으로 생성할 수 있도록 정보를 제공
+3. 실행 시(런타임 시) 특정 기능을 실행하도록 정보를 제공 
+  
+무엇이 변했나 ?
+1. 자바 8부터 애노테이션을 타입 선언부에도 사용할 수 있게 됨
+2. 자바 8부터 애노테이션을 중복해서 사용할 수 있게 됨
+
+예시코드는 pdf에
