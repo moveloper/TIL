@@ -7,7 +7,7 @@
 - java.lang.funcation 패키지: 자바에서 미리 정의해둔 자주 사용할만한 함수 인터페이스
 - Lazy Evaluation 발생: 불필요한 연산을 피하기 위해 연산을 지연시켜 놓았다가 필요할 때 연산하는 방법
   - https://velog.io/@rockpago/Lazy-Evaluation (요약: 람다 표현식은 함수의 실행 결과가 아닌 함수의 동작 자체를 표현한다.따라서 람다식 자체는 연산이 아니다. 람다식이 표현하는 익명구현함수(get, apply와 같은)가 실제로 호출될 때
-    비로소 함수가 동작하여 값을 연산하는 것이다.)
+    비로소 함수가 동작하여 값을 연산하는 것이다. Stream Pipeline에서도 터미널 오퍼레이션에서만 실제 작업이 수행되기 때문에, 터미널 오퍼레이션에서만 함수형 인터페이스를 호출하는 로직이 존재한다.)
 - Function<T, R>
   -  T 타입을 받아서 R 타입을 리턴하는 함수 인터페이스
   -  R apply(T t)
@@ -298,6 +298,45 @@ public class App {
 }
 
 ```
+
+
+```java
+// filter() 분석 
+@Override
+public final Stream<P_OUT> filter(Predicate<? super P_OUT> predicate) {
+    Objects.requireNonNull(predicate);
+    return new StatelessOp<P_OUT, P_OUT>(this, StreamShape.REFERENCE,
+                                    StreamOpFlag.NOT_SIZED) {
+        @Override
+        Sink<P_OUT> opWrapSink(int flags, Sink<P_OUT> sink) {
+            return new Sink.ChainedReference<P_OUT, P_OUT>(sink) {
+                @Override
+                public void begin(long size) {
+                    downstream.begin(-1);
+                }
+
+                @Override
+                public void accept(P_OUT u) {
+                    if (predicate.test(u))
+                        downstream.accept(u);
+                }
+            };
+        }
+    };
+}
+/*
+Stream의 filter 연산은 요소를 걸러내는 역할을 합니다. 즉, Predicate 함수형 인터페이스에 따라 걸러내고자 하는 조건을 구현한 람다 표현식을 인자로 받아서 해당 조건을 만족하는 요소만을 추출하는 작업을 합니다.
+
+filter 메소드는 Stream을 반환하는 메소드입니다. 반환된 Stream은 중간 연산으로, 이어지는 연산을 지연 실행하여 처리합니다. filter 연산을 수행한 후에는 원래 Stream 객체를 수정하지 않고 새로운 Stream 객체를 생성합니다.
+
+filter 연산을 수행할 때는 상태를 유지하지 않고, 요소 하나씩을 검사하면서 Predicate 함수형 인터페이스의 test() 메소드를 호출합니다. 만약 test() 메소드가 true를 반환하는 요소는 새로운 Stream에 포함시키고, false를 반환하는 요소는 제외시킵니다.
+
+filter 연산은 StatelessOp 클래스를 상속받은 내부 클래스를 정의하여 처리합니다. 이 내부 클래스는 Sink 인터페이스의 accept() 메소드를 오버라이드하여 Predicate에 따라 요소를 걸러냅니다. 그리고 걸러낸 요소를 downstream의 accept() 메소드를 호출하여 다음 연산으로 전달합니다. 이때 downstream은 filter 연산을 수행한 Stream 객체를 참조합니다.
+
+즉, filter 연산은 상태를 유지하지 않고 각 요소를 검사하여 조건을 만족하는 요소만을 포함하는 새로운 Stream 객체를 생성합니다. 이 과정에서 상태 변화 없이 스트림 요소를 건너뛰거나 제외시키는 효율적인 방법을 제공합니다.
+*/
+```
+
 
 ## 10. Optional 
 
