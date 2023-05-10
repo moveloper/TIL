@@ -50,3 +50,25 @@ void swap(int *a, int *b) { // 포인터 매개 변수:새로운 주소 값에 �
 > 참조3: C와 C++에서의 call by value, call by address, call by reference 엄밀한 구분 
 > https://deveric.tistory.com/m/92 
  
+--- 
+
+번외: 아래에 res = res.concat(" ").concat(elem); 이 작동하지 않는다는 문제를 보고 순간 헷갈려서 이번 기회에 정리해 본 것이다. String::new 에서 생성된 인스턴스를 물고가면서 코드가 진행될텐데, res가 불변객체라 수정할 수 없어 재할당 하는 코드를 작성한 것이 문제로 보인다. res에 할당된 값은 위에서 작성한 글 기준으로 call by value이기에 람다가 끝나면 증발해버릴 것이다.  
+
+
+```java 
+ public static void main(String[] args) {
+        List<String> list2 = Arrays.asList("adf", "bcd", "abc", "hgr", "jyt", "edr", "biu");
+
+String collect = list2.stream().collect(String::new, (res, elem) -> {
+              res=res.concat(" ").concat(elem);
+//            System.out.printf("res=%s, elem=%s\n", res.isEmpty(), elem);
+
+        }, (res1, res2) -> {
+            System.out.printf("res1=%s, res2=%s\n", res1, res2);            
+        });
+        System.out.println("collect=" + collect);
+}
+``` 
+
+https://stackoverflow.com/questions/29959795/how-does-combiner-in-stream-collect-method-work-in-java-8  
+  
