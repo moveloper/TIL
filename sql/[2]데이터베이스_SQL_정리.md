@@ -832,12 +832,45 @@ ORDER BY A.ID, B.CODE, B.QUAN;
 * START WITH절을 통해 지정된 계층구조가 전개될 시작 데이터를 파악한다.
 * PRIOR 사원 = 매니저(이전 레벨의 사원값을 매니저값으로 가지고 있는, 부모->자식 순방향 전개)  
 PRIOR 매니저 = 사원(이전 레벨의 매니저값을 사원값으로 가지고 있는, 자식->부모 역방향 전개)
-* PRIOR은 SELECT, WHERE절에서도 사용가능하다. *그냥 PRIOR 키워드를 이전에 참조하고 있는 데이터행이라고 치환해서 생각해버리자.*
+* PRIOR은 SELECT, WHERE절에서도 사용가능하다. *그냥 PRIOR 키워드를 이전에 참조하고 있는 데이터행(LEVEL= 1인 ROOT ROW의 컬럼 값) 이라고 치환해서 생각해버리자.*
 * 조건이 어느 절에 기재되어 있느냐에 따라
   * CONNECT BY 절에 작성된 조건: START WITH 절에서 필터링된 시작데이터는 결과목록에 포함되며, 이후 하위데이터도 전개되지만 조건을 충족하지 않는 하위 데이터는 결과에서 제외된다. 
   * PRIOR 조건에 추가된 조건: START WITH 절에서 필터링된 시작데이터는 결과목록에 포함되며, <u>*PRIOR조건을 모두 만족하는 경우에만 하위데이터가 전개된다*</u>. PRIOR조건을 모두 만족시키지 않는 경우 하위데이터 자체가 전개 안됨
 * WHERE절에 작성된 조건: 계층구조를 모두 전개한 후 조건을 충족하는 데이터만 결과목록에 출력된다.
  
+* order siblings by는 '계층구조는 그대로 유지하면서 동일 부모를 가진 자식들끼리의 정렬 기준을 주는 것' 
+```sql
+WITH TAB1 AS 
+(SELECT '1' AS C1, '' AS C2, 'A' C3 FROM DUAL
+UNION ALL
+SELECT '2' AS C1, '1' AS C2, 'B' C3 FROM DUAL
+UNION ALL
+SELECT '3' AS C1, '1' AS C2, 'C' C3 FROM DUAL
+UNION ALL 
+SELECT '4' AS C1, '2' AS C2, 'D' C3 FROM DUAL -- 같은 레벨이더라도 같은 부모 내에서만 정렬이 이루어짐
+UNION ALL
+SELECT '5' AS C1, '2' AS C2, 'F' C3 FROM DUAL -- 같은 레벨이더라도 같은 부모 내에서만 정렬이 이루어짐
+UNION ALL
+SELECT '6' AS C1, '3' AS C2, 'E' C3 FROM DUAL -- 같은 레벨이더라도 같은 부모 내에서만 정렬이 이루어짐
+UNION ALL
+SELECT '7' AS C1, '4' AS C2, 'G' C3 FROM DUAL
+)
+SELECT C3, LEVEL
+FROM TAB1
+START WITH C2 IS NULL
+CONNECT BY PRIOR C1 = C2
+ORDER SIBLINGS BY C3 DESC;
+
+--결과 
+A	1
+C	2
+E	3 -- 같은 레벨이더라도 같은 부모 내에서만 정렬이 이루어짐 E F D
+B	2
+F	3 -- 같은 레벨이더라도 같은 부모 내에서만 정렬이 이루어짐 E F D
+D	3 -- 같은 레벨이더라도 같은 부모 내에서만 정렬이 이루어짐 E F D
+G	4
+```
+
 reference)
 
 https://m.blog.naver.com/PostView.naver?blogId=su12192000&logNo=222283217164&proxyReferer=https:%2F%2Fwww.google.com%2F
