@@ -1,5 +1,6 @@
 @Bean의 경우 개발자가 컨트롤이 불가능한 외부 라이브러리들을 Bean으로 등록하고 싶은 경우에 사용한다.
 ```java
+@Configuration
 public class RedisConfig {
 
     private @Value("${spring.redis.host}") String redisHost;
@@ -139,3 +140,8 @@ public class AppConfig {
 }
 
 ```
+
+## 같은 타입의 Bean이 여러개 등록된 경우 의존성 주입
+- @Autowired가 필드 이름과 빈의 식별자가 같으면 인젝션이 된다. 그런데 피해야 되는 이유는? 
+https://javacan.tistory.com/entry/Reason-Why-I-dont-use-name-based-Autowiring 
+
