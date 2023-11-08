@@ -26,6 +26,8 @@
 
 [ORA-29275: partial multibyte character와 DB LINK](#ora-29275-partial-multibyte-character와-db-link)
 
+[ORA-01002: fetch out of sequence와 DB LINK](#ora-01002-fetch-out-of-sequence와-db-link)
+
 [클라이언트와 서버의 날짜/인코딩 포맷 관련](#클라이언트와-서버의-날짜인코딩-포맷-관련)
 
 [CREATE TABLE .. AS SELECT (CTAS)시 주의할점](#create-table--as-select-ctas시-주의할점)
@@ -91,6 +93,7 @@
 [cross join할 때 조인하려는 테이블에 데이터가 없을 경우](#cross-join할-때-조인하려는-테이블에-데이터가-없을-경우)
 
 [LISTAGG(여러 행을 하나의 컬럼으로 만들기) 활용하기](#listagg여러-행을-하나의-컬럼으로-만들기-활용하기)
+
 
 ## ORA-01417: A TABLE MAY BE OUTER JOINED TO AT MOST ONE OTHER TABLE (11g 버전에서)
 원인: 한 테이블에 최대 OUTER JOIN은 한 개 이상이 되면 안됨
@@ -382,6 +385,14 @@ https://gent.tistory.com/406
 해결2: 추측컨데 멀티바이트 오류는 변환 값을 알 수 없는 정크/보이지 않는 문자가 Oracle 데이터에 있는 경우 발생하는 것으로 보임. 즉 변환 자체가 불가능한 경우로 추측. 
 다른 두 가지 경우는 데이터 문자집합은 변환 했으나, 데이터를 INSERT 처리하는 과정중에 각각 특정한 로직을 수행하다가 서로 다른 오류를 뱉어낸 것으로 추측된다.    
 ```
+
+## ORA-01002: fetch out of sequence와 DB LINK
+```
+상황: (티베로 -> 오라클) 원격지 데이터를 dblink로 cursor에 담고, 이를 fetch하는 도중 for loop 안에서 같은 원격지의 dblink를 사용하여 원격지 테이블에 ddl문을 날리고 commit하면 에러 발생
+추측: 같은 dblink로 데이터를 주고 받을 때, loop 안에서 commit 등으로 트랜잭션이 종료되면 커서가 닫혀버리는 것으로 보임. 커서가 닫히기 직전까지 저장된 데이터만 수행하고 종료되는 것으로 추정된다(커서를 열고 데이터를 올릴 때 일정한 크기를 할당하는 것 같음. 3개 컬럼을 커서에 올리면 8000로우까지 돌다가 에러가 발생하고, 50개 컬럼을 커서에 올리면 200로우에서 에러가 발생해버림) 
+해결: 이기종간 데이터를 네트워크를 통해 커서 안에 담고 트랜잭션을 처리하면 예상치 못한 변수가 발생할 확률이 높은 것 같다. 커서를 열고 전부 수행한 후 트랜잭션을 종료하기 위해 commit을 하는 등의 조치가 필요하다. 
+```
+
 
 ## 클라이언트와 서버의 날짜/인코딩 포맷 관련
 ```
